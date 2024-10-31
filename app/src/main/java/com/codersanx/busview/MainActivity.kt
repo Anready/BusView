@@ -1,4 +1,3 @@
-// MainActivity.kt
 package com.codersanx.busview
 
 import android.os.Bundle
@@ -11,17 +10,13 @@ import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import kotlinx.coroutines.*
-import org.json.JSONObject
+import org.json.JSONArray
 import android.preference.PreferenceManager
 import android.graphics.Color
-import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import org.json.JSONArray
-import org.osmdroid.util.BoundingBox
-import org.osmdroid.views.overlay.ItemizedIconOverlay
-import org.osmdroid.views.overlay.OverlayItem
+import org.json.JSONObject
 import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.sin
@@ -34,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private var selectedStopMarker: Marker? = null
     private val stopMarkers = mutableListOf<Marker>()
     private var routeLine: Polyline? = null
+    private val routeCoordinates = mutableListOf<GeoPoint>() // Координаты маршрута
     private val client = OkHttpClient()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
@@ -41,13 +37,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // Initialize OSMDroid
         Configuration.getInstance().load(
             applicationContext,
             PreferenceManager.getDefaultSharedPreferences(applicationContext)
         )
 
-        // Initialize views
         map = findViewById(R.id.map)
         busInfoTextView = findViewById(R.id.bus_info)
 
@@ -112,14 +106,9 @@ class MainActivity : AppCompatActivity() {
             val routePointsArray = JSONArray(response.body!!.string())
 
             withContext(Dispatchers.Main) {
-                val routeCoordinates = mutableListOf<GeoPoint>()
-
                 for (i in 0 until routePointsArray.length()) {
                     val point = routePointsArray.getJSONObject(i)
-                    routeCoordinates.add(GeoPoint(
-                        point.getDouble("lat"),
-                        point.getDouble("lng")
-                    ))
+                    routeCoordinates.add(GeoPoint(point.getDouble("lat"), point.getDouble("lng")))
                 }
 
                 routeLine = Polyline().apply {
@@ -129,25 +118,6 @@ class MainActivity : AppCompatActivity() {
                 }
                 map.overlays.add(routeLine)
                 map.invalidate()
-
-                // Optionally zoom to show the entire route
-                if (routeCoordinates.isNotEmpty()) {
-                    val bounds = routeCoordinates.fold(
-                        BoundingBox(
-                            routeCoordinates[0].latitude,
-                            routeCoordinates[0].longitude,
-                            routeCoordinates[0].latitude,
-                            routeCoordinates[0].longitude
-                        )
-                    ) { box, point ->
-                        BoundingBox.fromGeoPoints(listOf(
-                            GeoPoint(box.latNorth, box.lonWest),
-                            GeoPoint(box.latSouth, box.lonEast),
-                            point
-                        ))
-                    }
-                    map.zoomToBoundingBox(bounds, true, 50)
-                }
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -158,7 +128,7 @@ class MainActivity : AppCompatActivity() {
         coroutineScope.launch {
             while (isActive) {
                 showBuses()
-                delay(5000) // Update every 5 seconds
+                delay(5000)
             }
         }
     }
@@ -171,12 +141,10 @@ class MainActivity : AppCompatActivity() {
 
             val response = client.newCall(request).execute()
             val busesJson = response.body?.string()?.let {
-                JSONObject(it)
-                    .getJSONObject("Buses")
+                JSONObject(it).getJSONObject("Buses")
             }
 
             withContext(Dispatchers.Main) {
-                // Clear existing bus markers
                 busMarkers.forEach { map.overlays.remove(it) }
                 busMarkers.clear()
 
@@ -215,19 +183,39 @@ class MainActivity : AppCompatActivity() {
 
             busMarkers.forEach { busMarker ->
                 val busPoint = busMarker.position
-                val distance = calculateDistance(
-                    stopPoint.latitude, stopPoint.longitude,
-                    busPoint.latitude, busPoint.longitude
-                )
-                infoBuilder.append("Bus ${busMarker.title?.split("\n")?.get(0)}: ${String.format("%.2f", distance)} km\n")
+                val routeDistance = calculateRouteDistance(stopPoint, busPoint)
+                infoBuilder.append("Bus ${busMarker.title?.split("\n")?.get(0)}: ${String.format("%.2f", routeDistance)} km\n")
             }
 
             busInfoTextView.text = infoBuilder.toString()
         }
     }
 
+    private fun calculateRouteDistance(startPoint: GeoPoint, endPoint: GeoPoint): Double {
+        val nearestStartIndex = findNearestPointIndex(startPoint, routeCoordinates)
+        val nearestEndIndex = findNearestPointIndex(endPoint, routeCoordinates)
+
+        val startIndex = minOf(nearestStartIndex, nearestEndIndex)
+        val endIndex = maxOf(nearestStartIndex, nearestEndIndex)
+
+        var totalDistance = 0.0
+        for (i in startIndex until endIndex) {
+            totalDistance += calculateDistance(
+                routeCoordinates[i].latitude, routeCoordinates[i].longitude,
+                routeCoordinates[i + 1].latitude, routeCoordinates[i + 1].longitude
+            )
+        }
+        return totalDistance
+    }
+
+    private fun findNearestPointIndex(point: GeoPoint, routeCoordinates: List<GeoPoint>): Int {
+        return routeCoordinates.indices.minByOrNull {
+            calculateDistance(point.latitude, point.longitude, routeCoordinates[it].latitude, routeCoordinates[it].longitude)
+        } ?: 0
+    }
+
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371.0 // Earth's radius in kilometers
+        val R = 6371.0
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = sin(dLat / 2) * sin(dLat / 2) +
