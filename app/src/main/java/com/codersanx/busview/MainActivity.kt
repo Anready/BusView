@@ -1,146 +1,254 @@
+// MainActivity.kt
 package com.codersanx.busview
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.graphics.drawable.BitmapDrawable
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.util.Log
-import android.widget.Toast
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.res.ResourcesCompat
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import org.json.JSONObject
-import org.osmdroid.api.IMapController
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import java.net.HttpURLConnection
-import java.net.URL
-import kotlin.concurrent.thread
+import org.osmdroid.views.overlay.Polyline
+import kotlinx.coroutines.*
+import org.json.JSONObject
+import android.preference.PreferenceManager
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import androidx.core.content.ContextCompat
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.json.JSONArray
+import org.osmdroid.util.BoundingBox
+import org.osmdroid.views.overlay.ItemizedIconOverlay
+import org.osmdroid.views.overlay.OverlayItem
+import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
-
     private lateinit var map: MapView
-    private lateinit var mapController: IMapController
-    private val handler = Handler(Looper.getMainLooper())
-    private val markers = mutableListOf<Marker>()
-    private val updateInterval = 5000L // Update every 5 seconds
+    private lateinit var busInfoTextView: TextView
+    private val busMarkers = mutableListOf<Marker>()
+    private var selectedStopMarker: Marker? = null
+    private val stopMarkers = mutableListOf<Marker>()
+    private var routeLine: Polyline? = null
     private val client = OkHttpClient()
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         // Initialize OSMDroid
-        Configuration.getInstance().load(this, applicationContext.getSharedPreferences("osm_pref", MODE_PRIVATE))
+        Configuration.getInstance().load(
+            applicationContext,
+            PreferenceManager.getDefaultSharedPreferences(applicationContext)
+        )
 
-        // Setup MapView
+        // Initialize views
         map = findViewById(R.id.map)
-        map.setTileSource(TileSourceFactory.MAPNIK)
-        map.setBuiltInZoomControls(true)
-        map.setMultiTouchControls(true)
+        busInfoTextView = findViewById(R.id.bus_info)
 
-        // Center map on Cyprus
-        mapController = map.controller
-        mapController.setZoom(10.0)
-        val cyprus = GeoPoint(35.185566, 33.382276)
-        mapController.setCenter(cyprus)
-
-        // Start periodic update of bus locations
-        handler.postDelayed(::updateBuses, updateInterval)
+        setupMap()
+        initializeData()
+        startBusUpdates()
     }
 
-    // Function to fetch bus data and update markers
-    private fun updateBuses() {
-        thread {
-            try {
-                val proxyUrl = "https://cors-anywhere.herokuapp.com/" // CORS proxy
-                val apiUrl = "https://cyprusbus.info/api/buses"
+    private fun setupMap() {
+        map.setTileSource(TileSourceFactory.MAPNIK)
+        map.setMultiTouchControls(true)
+        val mapController = map.controller
+        mapController.setZoom(10.0)
+        mapController.setCenter(GeoPoint(35.185566, 33.382276))
+    }
 
-                // Build the request
-                val request = Request.Builder()
-                    .url(apiUrl)
-                    .build()
+    private fun initializeData() {
+        coroutineScope.launch {
+            loadStops()
+            loadRoute()
+        }
+    }
 
-                // Execute the request
-                val response: Response = client.newCall(request).execute()
+    private suspend fun loadStops() = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/16stops.json")
+                .build()
 
-                // Process the response if successful
-                if (response.isSuccessful) {
-                    response.body?.string()?.let { responseData ->
-                        runOnUiThread { displayBuses(responseData) }
+            val response = client.newCall(request).execute()
+            val stopsArray = JSONArray(response.body!!.string())
+
+            withContext(Dispatchers.Main) {
+                for (i in 0 until stopsArray.length()) {
+                    val stop = stopsArray.getJSONObject(i)
+                    val marker = Marker(map).apply {
+                        position = GeoPoint(stop.getDouble("lat"), stop.getDouble("lng"))
+                        title = stop.optString("name", "Stop ${i + 1}")
+                        icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus_stop)
+                        setOnMarkerClickListener { marker, _ ->
+                            selectStop(marker)
+                            true
+                        }
                     }
-                } else {
-                    runOnUiThread {Toast.makeText(this, response.code, Toast.LENGTH_LONG).show()}
-                    Log.e("MainActivity", "Error fetching bus data: ${response.code}")
+                    stopMarkers.add(marker)
+                    map.overlays.add(marker)
+                }
+                map.invalidate()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private suspend fun loadRoute() = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/16.json")
+                .build()
+
+            val response = client.newCall(request).execute()
+            val routePointsArray = JSONArray(response.body!!.string())
+
+            withContext(Dispatchers.Main) {
+                val routeCoordinates = mutableListOf<GeoPoint>()
+
+                for (i in 0 until routePointsArray.length()) {
+                    val point = routePointsArray.getJSONObject(i)
+                    routeCoordinates.add(GeoPoint(
+                        point.getDouble("lat"),
+                        point.getDouble("lng")
+                    ))
                 }
 
-                // Close the response body
-                response.close()
-            } catch (e: Exception) {
-                Log.e("MainActivity", "Error fetching bus data", e)
-                runOnUiThread {Toast.makeText(this, e.message, Toast.LENGTH_LONG).show()}
-            }
+                routeLine = Polyline().apply {
+                    setPoints(routeCoordinates)
+                    color = Color.RED
+                    width = 4f
+                }
+                map.overlays.add(routeLine)
+                map.invalidate()
 
-            handler.postDelayed(::updateBuses, updateInterval) // Schedule the next update
+                // Optionally zoom to show the entire route
+                if (routeCoordinates.isNotEmpty()) {
+                    val bounds = routeCoordinates.fold(
+                        BoundingBox(
+                            routeCoordinates[0].latitude,
+                            routeCoordinates[0].longitude,
+                            routeCoordinates[0].latitude,
+                            routeCoordinates[0].longitude
+                        )
+                    ) { box, point ->
+                        BoundingBox.fromGeoPoints(listOf(
+                            GeoPoint(box.latNorth, box.lonWest),
+                            GeoPoint(box.latSouth, box.lonEast),
+                            point
+                        ))
+                    }
+                    map.zoomToBoundingBox(bounds, true, 50)
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
-    // Display bus locations on the map
-    private fun displayBuses(response: String) {
-        try {
-            val jsonObject = JSONObject(response)
-            val buses = jsonObject.getJSONObject("Buses")
-
-            // Remove existing markers
-            markers.forEach { map.overlays.remove(it) }
-            markers.clear()
-
-            // Load bus icon
-
-            // Add new markers
-            buses.keys().forEach { key ->
-                val bus = buses.getJSONObject(key)
-                val latitude = bus.getDouble("Latitude")
-                val longitude = bus.getDouble("Longitude")
-                val label = bus.getString("Label")
-                val routeShortName = bus.getString("RouteShortName")
-                val routeLongName = bus.getString("RouteLongName")
-                val speed = bus.getInt("SpeedKmPerHour")
-
-                val busIconDrawable = ResourcesCompat.getDrawable(resources, R.drawable.ic_android_black_24dp, theme)
-
-
-
-                // Create and add a marker with a custom icon
-                val marker = Marker(map)
-                //marker.icon = busIconDrawable
-                marker.position = GeoPoint(latitude, longitude)
-                marker.title = "Bus $label"
-                marker.snippet = "Route: $routeShortName - $routeLongName Speed: $speed"
-                marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-
-                // Set custom icon if available
-
-// Set the Drawable icon
-                // Add marker to map and list
-                map.overlays.add(marker)
-                markers.add(marker)
+    private fun startBusUpdates() {
+        coroutineScope.launch {
+            while (isActive) {
+                showBuses()
+                delay(5000) // Update every 5 seconds
             }
-            map.invalidate() // Refresh the map to display the new markers
-        } catch (e: Exception) {
-            Log.e("MainActivity", "Error parsing bus data", e)
         }
+    }
+
+    private suspend fun showBuses() = withContext(Dispatchers.IO) {
+        try {
+            val request = Request.Builder()
+                .url("https://cyprusbus.info/api/buses")
+                .build()
+
+            val response = client.newCall(request).execute()
+            val busesJson = response.body?.string()?.let {
+                JSONObject(it)
+                    .getJSONObject("Buses")
+            }
+
+            withContext(Dispatchers.Main) {
+                // Clear existing bus markers
+                busMarkers.forEach { map.overlays.remove(it) }
+                busMarkers.clear()
+
+                busesJson?.keys()?.forEach { key ->
+                    val bus = busesJson.getJSONObject(key)
+                    if (bus.getString("RouteShortName") == "16") {
+                        val busMarker = Marker(map).apply {
+                            position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
+                            icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
+                            title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                        }
+                        busMarkers.add(busMarker)
+                        map.overlays.add(busMarker)
+                    }
+                }
+                calculateDistancesToStop()
+                map.invalidate()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun selectStop(marker: Marker) {
+        selectedStopMarker?.icon = ContextCompat.getDrawable(this, R.drawable.bus_stop)
+        selectedStopMarker = marker
+        marker.icon = ContextCompat.getDrawable(this, R.drawable.bus_stop_selected)
+        calculateDistancesToStop()
+        map.invalidate()
+    }
+
+    private fun calculateDistancesToStop() {
+        selectedStopMarker?.let { stopMarker ->
+            val stopPoint = stopMarker.position
+            val infoBuilder = StringBuilder()
+
+            busMarkers.forEach { busMarker ->
+                val busPoint = busMarker.position
+                val distance = calculateDistance(
+                    stopPoint.latitude, stopPoint.longitude,
+                    busPoint.latitude, busPoint.longitude
+                )
+                infoBuilder.append("Bus ${busMarker.title?.split("\n")?.get(0)}: ${String.format("%.2f", distance)} km\n")
+            }
+
+            busInfoTextView.text = infoBuilder.toString()
+        }
+    }
+
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val R = 6371.0 // Earth's radius in kilometers
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = sin(dLat / 2) * sin(dLat / 2) +
+                cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
+                sin(dLon / 2) * sin(dLon / 2)
+        val c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        return R * c
+    }
+
+    override fun onResume() {
+        super.onResume()
+        map.onResume()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        map.onPause()
     }
 
     override fun onDestroy() {
-        handler.removeCallbacksAndMessages(null) // Stop the updates when activity is destroyed
         super.onDestroy()
+        coroutineScope.cancel()
     }
 }
