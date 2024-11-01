@@ -1,5 +1,6 @@
 package com.codersanx.busview
 
+import Network
 import android.os.Bundle
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -13,6 +14,9 @@ import kotlinx.coroutines.*
 import org.json.JSONArray
 import android.preference.PreferenceManager
 import android.graphics.Color
+import android.widget.ArrayAdapter
+import android.widget.AutoCompleteTextView
+import androidx.activity.enableEdgeToEdge
 import androidx.core.content.ContextCompat
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,16 +29,18 @@ import kotlin.math.sqrt
 class MainActivity : AppCompatActivity() {
     private lateinit var map: MapView
     private lateinit var busInfoTextView: TextView
+    private lateinit var route: AutoCompleteTextView
     private val busMarkers = mutableListOf<Marker>()
     private var selectedStopMarker: Marker? = null
     private val stopMarkers = mutableListOf<Marker>()
     private var routeLine: Polyline? = null
-    private val routeCoordinates = mutableListOf<GeoPoint>() // Координаты маршрута
+    private val routeCoordinates = mutableListOf<GeoPoint>()
     private val client = OkHttpClient()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
         Configuration.getInstance().load(
@@ -44,10 +50,24 @@ class MainActivity : AppCompatActivity() {
 
         map = findViewById(R.id.map)
         busInfoTextView = findViewById(R.id.bus_info)
+        route = findViewById(R.id.currentBus)
 
-        setupMap()
-        initializeData()
-        startBusUpdates()
+        coroutineScope.launch {
+            val adapter: ArrayAdapter<String> = ArrayAdapter<String>(this@MainActivity, R.layout.route_item, Network().getRoutes())
+            route.isFocusable = false
+            route.isFocusableInTouchMode = false
+            route.setAdapter(adapter)
+
+            route.setText(adapter.getItem(0))
+
+            setupMap()
+            initializeData()
+            startBusUpdates()
+        }
+
+        route.setOnItemClickListener { _, _, _, _ ->
+            initializeData()
+        }
     }
 
     private fun setupMap() {
@@ -66,9 +86,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private suspend fun loadStops() = withContext(Dispatchers.IO) {
+        println("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${route.text.toString().replace(" ", "_")}stops.json")
         try {
             val request = Request.Builder()
-                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/16stops.json")
+                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${route.text.toString().replace(" ", "_")}stops.json")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -99,7 +120,7 @@ class MainActivity : AppCompatActivity() {
     private suspend fun loadRoute() = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
-                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/16.json")
+                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${route.text.toString().replace(" ", "_")}.json")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -150,7 +171,7 @@ class MainActivity : AppCompatActivity() {
 
                 busesJson?.keys()?.forEach { key ->
                     val bus = busesJson.getJSONObject(key)
-                    if (bus.getString("RouteShortName") == "16") {
+                    if (bus.getString("RouteShortName") + ": " + bus.getString("RouteLongName") == route.text.toString()) {
                         val busMarker = Marker(map).apply {
                             position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
                             icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
