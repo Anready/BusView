@@ -8,7 +8,7 @@ class Network {
     suspend fun getRoutes(): MutableList<String> = withContext(Dispatchers.IO) {
         val client = OkHttpClient()
         val request = Request.Builder()
-            .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/routes.json")
+            .url("https://raw.githubusercontent.com/Anready/BusRoutes/refs/heads/main/routes.json")
             .build()
 
         val response = client.newCall(request).execute()

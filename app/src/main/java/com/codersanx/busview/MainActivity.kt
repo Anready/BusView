@@ -2,7 +2,6 @@ package com.codersanx.busview
 
 import Network
 import android.os.Bundle
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -23,20 +22,23 @@ import okhttp3.Request
 import org.json.JSONObject
 import kotlin.math.atan2
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 class MainActivity : AppCompatActivity() {
     private lateinit var map: MapView
-    private lateinit var busInfoTextView: TextView
     private lateinit var route: AutoCompleteTextView
     private val busMarkers = mutableListOf<Marker>()
-    private var selectedStopMarker: Marker? = null
+    var selectedStopMarker: Marker? = null
     private val stopMarkers = mutableListOf<Marker>()
     private var routeLine: Polyline? = null
     private val routeCoordinates = mutableListOf<GeoPoint>()
     private val client = OkHttpClient()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
+    private val bottomSheetFragment = ShowTimeBuses()
+    private val routes: MutableList<Route> = mutableListOf()
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,11 +51,19 @@ class MainActivity : AppCompatActivity() {
         )
 
         map = findViewById(R.id.map)
-        busInfoTextView = findViewById(R.id.bus_info)
         route = findViewById(R.id.currentBus)
 
         coroutineScope.launch {
-            val adapter: ArrayAdapter<String> = ArrayAdapter<String>(this@MainActivity, R.layout.route_item, Network().getRoutes())
+            val allRoutes = Network().getRoutes()
+            val names: MutableList<String> = mutableListOf()
+
+            allRoutes.forEach { route ->
+                val data = route.split("###")
+                routes.add(Route(data[0], data[1], data[2]))
+                names.add(data[0])
+            }
+
+            val adapter: ArrayAdapter<String> = ArrayAdapter<String>(this@MainActivity, R.layout.route_item, names)
             route.isFocusable = false
             route.isFocusableInTouchMode = false
             route.setAdapter(adapter)
@@ -89,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         println("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${route.text.toString().replace(" ", "_")}stops.json")
         try {
             val request = Request.Builder()
-                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${route.text.toString().replace(" ", "_")}stops.json")
+                .url("${getLink(route.text.toString())}stops.json")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -120,7 +130,7 @@ class MainActivity : AppCompatActivity() {
     private suspend fun loadRoute() = withContext(Dispatchers.IO) {
         try {
             val request = Request.Builder()
-                .url("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${route.text.toString().replace(" ", "_")}.json")
+                .url("${getLink(route.text.toString())}.json")
                 .build()
 
             val response = client.newCall(request).execute()
@@ -143,6 +153,16 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+    }
+
+    private fun getLink(name: String): String {
+        routes.forEach { route ->
+            if (route.label == name) {
+                return route.routeLink
+            }
+        }
+
+        return ""
     }
 
     private fun startBusUpdates() {
@@ -171,7 +191,7 @@ class MainActivity : AppCompatActivity() {
 
                 busesJson?.keys()?.forEach { key ->
                     val bus = busesJson.getJSONObject(key)
-                    if (bus.getString("RouteShortName") + ": " + bus.getString("RouteLongName") == route.text.toString()) {
+                    if (bus.getString("RouteLongName") == getLongName(route.text.toString())) {
                         val busMarker = Marker(map).apply {
                             position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
                             icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
@@ -189,6 +209,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun getLongName(name: String): String {
+        routes.forEach { route ->
+            if (route.label == name) {
+                return route.routLong
+            }
+        }
+
+        return ""
+    }
+
     private fun selectStop(marker: Marker) {
         selectedStopMarker?.icon = ContextCompat.getDrawable(this, R.drawable.bus_stop)
         selectedStopMarker = marker
@@ -200,21 +230,34 @@ class MainActivity : AppCompatActivity() {
     private fun calculateDistancesToStop() {
         selectedStopMarker?.let { stopMarker ->
             val stopPoint = stopMarker.position
-            val infoBuilder = StringBuilder()
+            val infoBuilder: MutableList<String> = mutableListOf()
 
             busMarkers.forEach { busMarker ->
                 val busPoint = busMarker.position
                 val routeDistance = calculateRouteDistance(stopPoint, busPoint)
-                infoBuilder.append("Bus ${busMarker.title?.split("\n")?.get(0)}: ${String.format("%.2f", routeDistance)} km\n")
+                if (routeDistance == -1.0) {
+                    return@forEach
+                }
+
+                val time = ((routeDistance / 35)*60).roundToInt()
+                infoBuilder.add("${busMarker.title?.split("\n")?.get(0)}: $time min\n")
             }
 
-            busInfoTextView.text = infoBuilder.toString()
+            bottomSheetFragment.updateView(infoBuilder)
+
+            if (!bottomSheetFragment.isAdded && !bottomSheetFragment.isVisible) {
+                bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
+            }
         }
     }
 
     private fun calculateRouteDistance(startPoint: GeoPoint, endPoint: GeoPoint): Double {
         val nearestStartIndex = findNearestPointIndex(startPoint, routeCoordinates)
         val nearestEndIndex = findNearestPointIndex(endPoint, routeCoordinates)
+
+        if (nearestStartIndex < nearestEndIndex) {
+            return -1.0
+        }
 
         val startIndex = minOf(nearestStartIndex, nearestEndIndex)
         val endIndex = maxOf(nearestStartIndex, nearestEndIndex)
