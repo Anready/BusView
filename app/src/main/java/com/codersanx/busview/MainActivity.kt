@@ -68,7 +68,9 @@ class MainActivity : AppCompatActivity() {
             route.isFocusableInTouchMode = false
             route.setAdapter(adapter)
 
-            route.setText(adapter.getItem(0))
+           // route.setText(adapter.getItem(0))
+            route.hint = "Choose route"
+
 
             setupMap()
             initializeData()
@@ -90,6 +92,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun initializeData() {
         coroutineScope.launch {
+            map.overlays.clear()
+            routeCoordinates.clear()
             loadStops()
             loadRoute()
         }
