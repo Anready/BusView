@@ -38,6 +38,7 @@ class MainActivity : AppCompatActivity() {
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private val bottomSheetFragment = ShowTimeBuses()
     private val routes: MutableList<Route> = mutableListOf()
+    private var currentBusMarker: Marker? = null
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,7 +71,6 @@ class MainActivity : AppCompatActivity() {
 
            // route.setText(adapter.getItem(0))
             route.hint = "Choose route"
-
 
             setupMap()
             initializeData()
@@ -196,15 +196,22 @@ class MainActivity : AppCompatActivity() {
                 busesJson?.keys()?.forEach { key ->
                     val bus = busesJson.getJSONObject(key)
                     if (bus.getString("RouteLongName") == getLongName(route.text.toString())) {
-                        val busMarker = Marker(map).apply {
-                            position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
-                            icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
-                            title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                        if (currentBusMarker == null || currentBusMarker?.title != "Bus ${bus.getString("Label")}") {
+                            val busMarker = Marker(map).apply {
+                                position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
+                                icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
+                                title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                            }
+                            busMarkers.add(busMarker)
+                            map.overlays.add(busMarker)
+                            currentBusMarker = busMarker
+                        } else {
+                            currentBusMarker?.position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
+                            currentBusMarker?.title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                         }
-                        busMarkers.add(busMarker)
-                        map.overlays.add(busMarker)
                     }
                 }
+
                 calculateDistancesToStop()
                 map.invalidate()
             }
