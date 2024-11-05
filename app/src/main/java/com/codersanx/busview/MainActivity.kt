@@ -1,6 +1,7 @@
 package com.codersanx.busview
 
-import Network
+import com.codersanx.busview.utils.network.Network
+import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import org.osmdroid.config.Configuration
@@ -13,10 +14,14 @@ import kotlinx.coroutines.*
 import org.json.JSONArray
 import android.preference.PreferenceManager
 import android.graphics.Color
+import android.net.Uri
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import com.codersanx.busview.utils.Route
+import com.codersanx.busview.utils.network.GetUpdate
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -26,7 +31,7 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private lateinit var map: MapView
     private lateinit var route: AutoCompleteTextView
     private val busMarkers = mutableListOf<Marker>()
@@ -50,6 +55,9 @@ class MainActivity : AppCompatActivity() {
             applicationContext,
             PreferenceManager.getDefaultSharedPreferences(applicationContext)
         )
+
+        val fetchData = GetUpdate("https://codersanx.netlify.app/api/appsn", this, this)
+        fetchData.getUpdateInformation()
 
         map = findViewById(R.id.map)
         route = findViewById(R.id.currentBus)
@@ -206,8 +214,11 @@ class MainActivity : AppCompatActivity() {
                             map.overlays.add(busMarker)
                             currentBusMarker = busMarker
                         } else {
-                            currentBusMarker?.position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
-                            currentBusMarker?.title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                            currentBusMarker?.apply {
+                                position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
+                                title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                                map.overlays.add(this)
+                            }
                         }
                     }
                 }
@@ -313,5 +324,24 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         coroutineScope.cancel()
+    }
+
+    override fun onUpdateReceived(update: Array<out String>) {
+        val description = update[0]
+        val link = update[1]
+
+        val builder = AlertDialog.Builder(this)
+        builder.setCancelable(false)
+        builder.setTitle("Update Available")
+        builder.setMessage("Whats new?\n $description")
+        builder.setPositiveButton("Update") { _, _ ->
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
+        }
+
+        if (update[3].toLong() - update[2].toLong() == 1L) {
+            builder.setNegativeButton("Later") { dialogInterface, _ -> dialogInterface.dismiss() }
+        }
+
+        runOnUiThread { builder.show() }
     }
 }
