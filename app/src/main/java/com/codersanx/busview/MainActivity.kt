@@ -209,6 +209,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                                 position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
                                 icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
                                 title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                                setOnMarkerClickListener { marker, _ ->
+                                  Toast.makeText(context, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
+                                  true
+                                }
                             }
                             busMarkers.add(busMarker)
                             map.overlays.add(busMarker)
@@ -218,6 +222,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                                 position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
                                 title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                                 map.overlays.add(this)
+                                setOnMarkerClickListener { marker, _ ->
+                                  Toast.makeText(context, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
+                                  true
+                                }
                             }
                         }
                     }
