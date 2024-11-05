@@ -13,6 +13,7 @@ import android.widget.ListView
 class ShowTimeBuses : BottomSheetDialogFragment() {
 
     var item: MutableList<String> = mutableListOf()  // Use MutableList to modify the list
+    var name: String = "Stop"
     private lateinit var listView: ListView
     private lateinit var stopNameTextView: TextView
     private var adapter: ArrayAdapter<String>? = null  // Initialize adapter as nullable
@@ -35,18 +36,20 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
         // Initialize the adapter with the current item list and set it to the ListView
         adapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, item)
         listView.adapter = adapter
+        stopNameTextView.text = name
     }
 
     // Function to update the ListView's data
     fun updateView(newItems: List<String>, stopName: String) {
-        if (!::stopNameTextView.isInitialized) {
-        // Handle the case where stopNameTextView is not initialized
-            return
-        }
+        name = stopName
+        
         if (adapter != null) {
             item.clear()
             item.addAll(newItems)
             adapter?.notifyDataSetChanged()
+        }
+        if (!::stopNameTextView.isInitialized) {
+           return
         }
         if(stopNameTextView != null) {
             stopNameTextView.text = stopName
