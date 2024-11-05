@@ -262,7 +262,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 }
 
                 val time = ((routeDistance / 35)*60).roundToInt()
-                infoBuilder.add("${busMarker.title?.split("\n")?.get(0)}: $time min\n")
+                infoBuilder.add("${busMarker.title?.split("\n")?.get(0)}: $time min\n ($routeDistance km)")
             }
 
             bottomSheetFragment.updateView(infoBuilder)
