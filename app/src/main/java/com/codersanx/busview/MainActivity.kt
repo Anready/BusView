@@ -30,6 +30,8 @@ import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
+import android.widget.Toast
+
 
 class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private lateinit var map: MapView
@@ -210,7 +212,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                                 icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
                                 title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                                 setOnMarkerClickListener { marker, _ ->
-                                  Toast.makeText(context, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
                                   true
                                 }
                             }
