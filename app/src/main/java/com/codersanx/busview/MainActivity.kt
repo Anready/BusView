@@ -262,10 +262,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 }
 
                 val time = ((routeDistance / 35)*60).roundToInt()
-                infoBuilder.add("${busMarker.title?.split("\n")?.get(0)}: $time min\n ($routeDistance km)")
+                infoBuilder.add("${busMarker.title?.split("\n")?.get(0)}: $time min\n(${String.format("%.3f", routeDistance)} km)")
             }
 
-            bottomSheetFragment.updateView(infoBuilder)
+            bottomSheetFragment.updateView(infoBuilder, selectedStopMarker!!.title)
 
             if (!bottomSheetFragment.isAdded && !bottomSheetFragment.isVisible) {
                 bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)

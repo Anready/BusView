@@ -13,6 +13,7 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
 
     var item: MutableList<String> = mutableListOf()  // Use MutableList to modify the list
     private lateinit var listView: ListView
+    private lateinit var stopNameTextView: TextView
     private var adapter: ArrayAdapter<String>? = null  // Initialize adapter as nullable
 
     override fun onCreateView(
@@ -20,7 +21,8 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
         savedInstanceState: Bundle?
     ): View? {
         val view = inflater.inflate(R.layout.show_time_buses, container, false)
-
+        
+        stopNameTextView = view.findViewById(R.id.stop_name_text_view)
         // Initialize ListView
         listView = view.findViewById(R.id.my_list_view)
         return view
@@ -35,12 +37,15 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
     }
 
     // Function to update the ListView's data
-    fun updateView(newItems: List<String>) {
-        if (adapter != null) {  // Check if adapter is initialized
-            item.clear()                 // Clear existing items
-            item.addAll(newItems)        // Add new items
-            adapter?.notifyDataSetChanged() // Notify adapter of data change
+    fun updateView(newItems: List<String>, stopName: String) {
+        if (adapter != null) {
+            item.clear()
+            item.addAll(newItems)
+            adapter?.notifyDataSetChanged()
         }
+        if(stopNameTextView != null) {
+            stopNameTextView.text = stopName
+        } // Update the stop name
     }
 
     override fun onDismiss(dialog: android.content.DialogInterface) {
