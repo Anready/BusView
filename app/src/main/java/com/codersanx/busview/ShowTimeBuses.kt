@@ -39,6 +39,10 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
 
     // Function to update the ListView's data
     fun updateView(newItems: List<String>, stopName: String) {
+        if (!::stopNameTextView.isInitialized) {
+        // Handle the case where stopNameTextView is not initialized
+            return
+        }
         if (adapter != null) {
             item.clear()
             item.addAll(newItems)
