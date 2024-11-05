@@ -1,6 +1,7 @@
 package com.codersanx.busview
 
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
+import android.widget.TextView
 import android.os.Bundle
 import androidx.core.content.ContextCompat
 import android.view.LayoutInflater
