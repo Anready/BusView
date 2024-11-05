@@ -225,7 +225,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                                 title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                                 map.overlays.add(this)
                                 setOnMarkerClickListener { marker, _ ->
-                                  Toast.makeText(context, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(this@MainActivity, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
                                   true
                                 }
                             }
