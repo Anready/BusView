@@ -41,6 +41,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
+import com.codersanx.busview.utils.Bus
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -91,8 +92,6 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             }
         }
     }
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -188,7 +187,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         }
     }
 
-    private fun centerMapOnLocation(location: GeoPoint) {
+    fun centerMapOnLocation(location: GeoPoint) {
         val mapController = map.controller
         mapController.setCenter(location)
         mapController.setZoom(15.0)  // Set to a reasonable zoom level, adjust as needed
@@ -314,8 +313,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                         if (currentBusMarker == null || currentBusMarker?.title != "Bus ${bus.getString("Label")}") {
                             val busMarker = Marker(map).apply {
                                 position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
-                                icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus)
+                                icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus_map)
                                 title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                                rotation = bus.getInt("Bearing").toFloat()
+
                                 setOnMarkerClickListener { marker, _ ->
                                 Toast.makeText(this@MainActivity, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
                                   true
@@ -367,7 +368,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private fun calculateDistancesToStop() {
         selectedStopMarker?.let { stopMarker ->
             val stopPoint = stopMarker.position
-            val infoBuilder: MutableList<String> = mutableListOf()
+            val infoBuilder: MutableList<Bus> = mutableListOf()
 
             busMarkers.forEach { busMarker ->
                 val busPoint = busMarker.position
@@ -377,10 +378,15 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 }
 
                 val time = ((routeDistance / 35)*60).roundToInt()
-                infoBuilder.add("${busMarker.title?.split("\n")?.get(0)}: $time min\n(${String.format("%.3f", routeDistance)} km)")
+                infoBuilder.add(Bus("${busMarker.title?.split("\n")?.get(0)}: $time min\n(${String.format("%.3f", routeDistance)} km)", busPoint))
             }
 
-            bottomSheetFragment.updateView(infoBuilder, selectedStopMarker!!.title)
+            val sortedInfo = infoBuilder.sortedBy {
+                it.name.substringAfter(": ").substringBefore(" min").toInt()
+            }
+
+            val url = "geo:${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}?q=${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}(${selectedStopMarker!!.title})"
+            bottomSheetFragment.updateView(sortedInfo, selectedStopMarker!!.title, Uri.parse(url))
 
             if (!bottomSheetFragment.isAdded && !bottomSheetFragment.isVisible) {
                 bottomSheetFragment.show(supportFragmentManager, bottomSheetFragment.tag)
