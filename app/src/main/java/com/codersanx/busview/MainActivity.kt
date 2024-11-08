@@ -50,24 +50,27 @@ import com.google.android.gms.location.LocationServices
 
 
 class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var map: MapView
     private lateinit var route: AutoCompleteTextView
     private lateinit var sensorManager: SensorManager
+    private lateinit var locationRequest: LocationRequest
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
     private val busMarkers = mutableListOf<Marker>()
-    var selectedStopMarker: Marker? = null
-    var currentUserMarker: Marker? = null
     private val stopMarkers = mutableListOf<Marker>()
-    private var routeLine: Polyline? = null
     private val routeCoordinates = mutableListOf<GeoPoint>()
     private val client = OkHttpClient()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
-    private val bottomSheetFragment = ShowTimeBuses()
     private val routes: MutableList<Route> = mutableListOf()
-    private var currentBusMarker: Marker? = null
     private val LOCATION_PERMISSION_REQUEST_CODE = 1
-    private lateinit var locationRequest: LocationRequest
+
+    private var currentBusMarker: Marker? = null
     private var locationCallback: LocationCallback? = null
+    private var routeLine: Polyline? = null
+
+    val bottomSheetFragment = ShowTimeBuses()
+    var selectedStopMarker: Marker? = null
+    var currentUserMarker: Marker? = null
 
     private fun setupLocationUpdates() {
         // Initialize FusedLocationProviderClient
@@ -86,7 +89,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 val location = locationResult.lastLocation
                 location?.let {
                     val userGeoPoint = GeoPoint(it.latitude, it.longitude)
-                    val bearing = it.bearing
+                    val bearing = currentUserMarker?.rotation
                     updateUserMarker(userGeoPoint, bearing) // Update the marker with new location
                 }
             }
@@ -123,17 +126,19 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 names.add(data[0])
             }
 
-            val adapter: ArrayAdapter<String> = ArrayAdapter<String>(this@MainActivity, R.layout.route_item, names)
+            val adapter: ArrayAdapter<String> =
+                ArrayAdapter<String>(this@MainActivity, R.layout.route_item, names)
             route.isFocusable = false
             route.isFocusableInTouchMode = false
             route.setAdapter(adapter)
 
-           // route.setText(adapter.getItem(0))
+            // route.setText(adapter.getItem(0))
             route.hint = "Choose route"
 
             setupMap()
             initializeData()
             startBusUpdates()
+            getUserLocation()
         }
 
         val imageView: ImageView = findViewById(R.id.imageView2)
@@ -146,7 +151,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         }
     }
 
-    private fun updateUserMarker(location: GeoPoint, bearing: Float) {
+    private fun updateUserMarker(location: GeoPoint, bearing: Float?) {
         if (currentUserMarker == null) {
             // Initialize the marker if it doesn't already exist
             currentUserMarker = Marker(map).apply {
@@ -160,14 +165,19 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         // Update position and bearing of the existing marker
         currentUserMarker?.apply {
             position = location
-            rotation = bearing
+            rotation = bearing ?: 0F
+
         }
         map.invalidate()  // Refresh the map to show the updated marker
     }
 
     private fun getUserLocation() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
-            != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            )
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
@@ -190,7 +200,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     fun centerMapOnLocation(location: GeoPoint) {
         val mapController = map.controller
         mapController.setCenter(location)
-        mapController.setZoom(15.0)  // Set to a reasonable zoom level, adjust as needed
+        mapController.setZoom(20.0)  // Set to a reasonable zoom level, adjust as needed
     }
 
 
@@ -206,7 +216,6 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private fun initializeData() {
         coroutineScope.launch {
             map.overlays.clear()
-            getUserLocation()
             routeCoordinates.clear()
             loadStops()
             loadRoute()
@@ -214,7 +223,11 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     }
 
     private suspend fun loadStops() = withContext(Dispatchers.IO) {
-        println("https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${route.text.toString().replace(" ", "_")}stops.json")
+        println(
+            "https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${
+                route.text.toString().replace(" ", "_")
+            }stops.json"
+        )
         try {
             val request = Request.Builder()
                 .url("${getLink(route.text.toString())}stops.json")
@@ -310,16 +323,28 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 busesJson?.keys()?.forEach { key ->
                     val bus = busesJson.getJSONObject(key)
                     if (bus.getString("RouteLongName") == getLongName(route.text.toString())) {
-                        if (currentBusMarker == null || currentBusMarker?.title != "Bus ${bus.getString("Label")}") {
+                        if (currentBusMarker == null || currentBusMarker?.title != "Bus ${
+                                bus.getString(
+                                    "Label"
+                                )
+                            }"
+                        ) {
                             val busMarker = Marker(map).apply {
-                                position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
-                                icon = ContextCompat.getDrawable(this@MainActivity, R.drawable.bus_map)
-                                title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                                position =
+                                    GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
+                                icon =
+                                    ContextCompat.getDrawable(this@MainActivity, R.drawable.bus_map)
+                                title =
+                                    "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                                 rotation = bus.getInt("Bearing").toFloat()
 
                                 setOnMarkerClickListener { marker, _ ->
-                                Toast.makeText(this@MainActivity, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
-                                  true
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    true
                                 }
                             }
                             busMarkers.add(busMarker)
@@ -327,12 +352,18 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                             currentBusMarker = busMarker
                         } else {
                             currentBusMarker?.apply {
-                                position = GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
-                                title = "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                                position =
+                                    GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
+                                title =
+                                    "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                                 map.overlays.add(this)
                                 setOnMarkerClickListener { marker, _ ->
-                                Toast.makeText(this@MainActivity, "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h", Toast.LENGTH_SHORT).show()
-                                  true
+                                    Toast.makeText(
+                                        this@MainActivity,
+                                        "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    true
                                 }
                             }
                         }
@@ -377,15 +408,22 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                     return@forEach
                 }
 
-                val time = ((routeDistance / 35)*60).roundToInt()
-                infoBuilder.add(Bus("${busMarker.title?.split("\n")?.get(0)}: $time min\n(${String.format("%.3f", routeDistance)} km)", busPoint))
+                val time = ((routeDistance / 35) * 60).roundToInt()
+                infoBuilder.add(
+                    Bus(
+                        "${
+                            busMarker.title?.split("\n")?.get(0)
+                        }: $time min\n(${String.format("%.3f", routeDistance)} km)", busPoint
+                    )
+                )
             }
 
             val sortedInfo = infoBuilder.sortedBy {
                 it.name.substringAfter(": ").substringBefore(" min").toInt()
             }
 
-            val url = "geo:${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}?q=${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}(${selectedStopMarker!!.title})"
+            val url =
+                "geo:${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}?q=${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}(${selectedStopMarker!!.title})"
             bottomSheetFragment.updateView(sortedInfo, selectedStopMarker!!.title, Uri.parse(url))
 
             if (!bottomSheetFragment.isAdded && !bottomSheetFragment.isVisible) {
@@ -417,7 +455,12 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     private fun findNearestPointIndex(point: GeoPoint, routeCoordinates: List<GeoPoint>): Int {
         return routeCoordinates.indices.minByOrNull {
-            calculateDistance(point.latitude, point.longitude, routeCoordinates[it].latitude, routeCoordinates[it].longitude)
+            calculateDistance(
+                point.latitude,
+                point.longitude,
+                routeCoordinates[it].latitude,
+                routeCoordinates[it].longitude
+            )
         } ?: 0
     }
 
@@ -461,7 +504,11 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 getUserLocation()
             } else {
-                Toast.makeText(this, "Location permission is required to show your location on the map", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this,
+                    "Location permission is required to show your location on the map",
+                    Toast.LENGTH_LONG
+                ).show()
             }
         }
     }
@@ -485,8 +532,12 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     }
 
     private fun startLocationUpdates() {
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
-            == PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.ACCESS_FINE_LOCATION
+            )
+            == PackageManager.PERMISSION_GRANTED
+        ) {
             fusedLocationClient.requestLocationUpdates(
                 locationRequest,
                 locationCallback!!,
@@ -509,7 +560,11 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     override fun onResume() {
         super.onResume()
         val rotationVectorSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
-        sensorManager.registerListener(sensorEventListener, rotationVectorSensor, SensorManager.SENSOR_DELAY_UI)
+        sensorManager.registerListener(
+            sensorEventListener,
+            rotationVectorSensor,
+            SensorManager.SENSOR_DELAY_UI
+        )
         startLocationUpdates()
         map.onResume()
     }
