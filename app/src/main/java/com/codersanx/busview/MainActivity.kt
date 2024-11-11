@@ -143,6 +143,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         val imageView: ImageView = findViewById(R.id.imageView2)
         imageView.setOnClickListener {
+            if (currentUserMarker == null) {
+                return@setOnClickListener
+            }
+
             centerMapOnLocation(currentUserMarker!!.position)
         }
 
