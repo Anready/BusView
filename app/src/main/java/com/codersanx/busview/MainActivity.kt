@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -14,7 +13,6 @@ import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.Polyline
 import kotlinx.coroutines.*
 import org.json.JSONArray
-import android.preference.PreferenceManager
 import android.graphics.Color
 import android.hardware.Sensor
 import android.hardware.SensorEvent
@@ -47,6 +45,10 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import org.osmdroid.config.Configuration
+import org.osmdroid.library.BuildConfig
+import java.util.Locale
 
 
 class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
@@ -62,13 +64,12 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private val client = OkHttpClient()
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
     private val routes: MutableList<Route> = mutableListOf()
-    private val LOCATION_PERMISSION_REQUEST_CODE = 1
+    private val locationCode = 1
+    private val bottomSheetFragment = ShowTimeBuses()
 
     private var currentBusMarker: Marker? = null
     private var locationCallback: LocationCallback? = null
-    private var routeLine: Polyline? = null
 
-    val bottomSheetFragment = ShowTimeBuses()
     var selectedStopMarker: Marker? = null
     var currentUserMarker: Marker? = null
 
@@ -77,11 +78,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // Create a LocationRequest for real-time updates
-        locationRequest = LocationRequest.create().apply {
-            interval = 5000  // Update every 5 seconds (adjust as needed)
-            fastestInterval = 2000  // Fastest update rate
-            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
-        }
+        locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
+            .setMinUpdateIntervalMillis(2000L)
+            .build()
+
 
         // Initialize the location callback
         locationCallback = object : LocationCallback() {
@@ -101,14 +101,11 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
+        Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         setupLocationUpdates()
 
-        Configuration.getInstance().load(
-            applicationContext,
-            PreferenceManager.getDefaultSharedPreferences(applicationContext)
-        )
 
         val fetchData = GetUpdate("https://codersanx.netlify.app/api/appsn", this, this)
         fetchData.getUpdateInformation()
@@ -132,11 +129,9 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             route.isFocusableInTouchMode = false
             route.setAdapter(adapter)
 
-            // route.setText(adapter.getItem(0))
             route.hint = "Choose route"
 
             setupMap()
-            initializeData()
             startBusUpdates()
             getUserLocation()
         }
@@ -152,6 +147,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         route.setOnItemClickListener { _, _, _, _ ->
             initializeData()
+            getUserLocation(false)
         }
     }
 
@@ -175,7 +171,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         map.invalidate()  // Refresh the map to show the updated marker
     }
 
-    private fun getUserLocation() {
+    private fun getUserLocation(center: Boolean = true) {
         if (ContextCompat.checkSelfPermission(
                 this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION
@@ -185,7 +181,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
+                locationCode
             )
         } else {
             fusedLocationClient.lastLocation.addOnSuccessListener { location: Location? ->
@@ -193,7 +189,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                     val userLocation = GeoPoint(location.latitude, location.longitude)
                     val bearing = location.bearing
                     addUserMarker(userLocation, bearing)
-                    centerMapOnLocation(userLocation)
+
+                    if (center) {
+                        centerMapOnLocation(userLocation)
+                    }
                 } ?: run {
                     Toast.makeText(this, "Unable to get location", Toast.LENGTH_SHORT).show()
                 }
@@ -203,8 +202,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     fun centerMapOnLocation(location: GeoPoint) {
         val mapController = map.controller
-        mapController.setCenter(location)
-        mapController.setZoom(20.0)  // Set to a reasonable zoom level, adjust as needed
+        mapController.animateTo(location, 20.0, 1000L)
     }
 
 
@@ -227,11 +225,6 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     }
 
     private suspend fun loadStops() = withContext(Dispatchers.IO) {
-        println(
-            "https://raw.githubusercontent.com/Anready/anready.github.io/refs/heads/main/${
-                route.text.toString().replace(" ", "_")
-            }stops.json"
-        )
         try {
             val request = Request.Builder()
                 .url("${getLink(route.text.toString())}stops.json")
@@ -277,10 +270,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                     routeCoordinates.add(GeoPoint(point.getDouble("lat"), point.getDouble("lng")))
                 }
 
-                routeLine = Polyline().apply {
+                val routeLine = Polyline().apply {
                     setPoints(routeCoordinates)
-                    color = Color.RED
-                    width = 4f
+                    outlinePaint.color = Color.RED
+                    outlinePaint.strokeWidth = 4f
                 }
                 map.overlays.add(routeLine)
                 map.invalidate()
@@ -311,6 +304,10 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     private suspend fun showBuses() = withContext(Dispatchers.IO) {
         try {
+            if (route.text.toString() == "") {
+                return@withContext
+            }
+
             val request = Request.Builder()
                 .url("https://cyprusbus.info/api/buses")
                 .build()
@@ -342,7 +339,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                                     "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                                 rotation = bus.getInt("Bearing").toFloat()
 
-                                setOnMarkerClickListener { marker, _ ->
+                                setOnMarkerClickListener { _, _ ->
                                     Toast.makeText(
                                         this@MainActivity,
                                         "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h",
@@ -361,7 +358,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                                 title =
                                     "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
                                 map.overlays.add(this)
-                                setOnMarkerClickListener { marker, _ ->
+                                setOnMarkerClickListener { _, _ ->
                                     Toast.makeText(
                                         this@MainActivity,
                                         "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h",
@@ -417,7 +414,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                     Bus(
                         "${
                             busMarker.title?.split("\n")?.get(0)
-                        }: $time min\n(${String.format("%.3f", routeDistance)} km)", busPoint
+                        }: $time min\n(${String.format(Locale.getDefault(), "%.3f", routeDistance)} km)", busPoint
                     )
                 )
             }
@@ -469,14 +466,14 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     }
 
     private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
-        val R = 6371.0
+        val r = 6371.0
         val dLat = Math.toRadians(lat2 - lat1)
         val dLon = Math.toRadians(lon2 - lon1)
         val a = sin(dLat / 2) * sin(dLat / 2) +
                 cos(Math.toRadians(lat1)) * cos(Math.toRadians(lat2)) *
                 sin(dLon / 2) * sin(dLon / 2)
         val c = 2 * atan2(sqrt(a), sqrt(1 - a))
-        return R * c
+        return r * c
     }
 
     private fun addUserMarker(location: GeoPoint, bearing: Float) {
@@ -494,7 +491,6 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         currentUserMarker = userMarker
         map.overlays.add(userMarker)
-        map.controller.setCenter(location)
         map.invalidate()
     }
 
@@ -504,7 +500,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
+        if (requestCode == locationCode) {
             if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
                 getUserLocation()
             } else {
@@ -552,7 +548,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
+                locationCode
             )
         }
     }

@@ -22,7 +22,6 @@ class BusAdapter(activity: MainActivity, private val items: List<Bus>) :
         val itemText = view.findViewById<TextView>(R.id.item_text)
         view.setOnClickListener {
             mainActivity.centerMapOnLocation(item.location)
-            mainActivity.bottomSheetFragment.dismiss()
         }
         itemText.text = item.name
 

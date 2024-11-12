@@ -61,7 +61,10 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
             item.clear()
             item.addAll(newItems)
             adapter?.notifyDataSetChanged()
+        } else {
+            item = newItems.toMutableList()
         }
+
         if (!::stopNameTextView.isInitialized) {
            return
         }
