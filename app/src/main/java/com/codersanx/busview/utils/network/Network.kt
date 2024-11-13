@@ -7,6 +7,9 @@ import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 
 class Network {
     suspend fun getRoutes(context: Context): MutableList<String> = withContext(Dispatchers.IO) {
@@ -25,7 +28,9 @@ class Network {
                 allRoutes.add(routesArray.getString(i))
             }
         } catch (e: Exception) {
-            Toast.makeText(context, "No internet", Toast.LENGTH_SHORT).show()
+            withContext(Dispatchers.Main) {
+              Toast.makeText(context, "No internet", Toast.LENGTH_SHORT).show()
+            }
         }
 
         allRoutes
