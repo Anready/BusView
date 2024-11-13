@@ -1,8 +1,10 @@
 package com.codersanx.busview
 
+import android.annotation.SuppressLint
 import android.content.Context
 import com.codersanx.busview.utils.network.Network
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
@@ -24,6 +26,9 @@ import android.os.Looper
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.SeekBar
+import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
@@ -56,7 +61,9 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private lateinit var route: AutoCompleteTextView
     private lateinit var sensorManager: SensorManager
     private lateinit var locationRequest: LocationRequest
+    private lateinit var sharedPreferences: SharedPreferences
     private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var sharedPreferencesEditor: SharedPreferences.Editor
 
     private val busMarkers = mutableListOf<Marker>()
     private val stopMarkers = mutableListOf<Marker>()
@@ -106,6 +113,8 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         setupLocationUpdates()
 
+        sharedPreferences = getSharedPreferences("Settings", MODE_PRIVATE)
+        sharedPreferencesEditor = sharedPreferences.edit()
 
         val fetchData = GetUpdate("https://codersanx.netlify.app/api/appsn", this, this)
         fetchData.getUpdateInformation()
@@ -114,7 +123,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         route = findViewById(R.id.currentBus)
 
         coroutineScope.launch {
-            val allRoutes = Network().getRoutes()
+            val allRoutes = Network().getRoutes(this@MainActivity)
             val names: MutableList<String> = mutableListOf()
 
             allRoutes.forEach { route ->
@@ -143,6 +152,11 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             }
 
             centerMapOnLocation(currentUserMarker!!.position)
+        }
+
+        val settings: ImageView = findViewById(R.id.imageView3)
+        settings.setOnClickListener {
+            showSeekBarDialog()
         }
 
         route.setOnItemClickListener { _, _, _, _ ->
@@ -409,7 +423,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                     return@forEach
                 }
 
-                val time = ((routeDistance / 35) * 60).roundToInt()
+                val time = ((routeDistance / sharedPreferences.getInt("speed", 25)) * 60).roundToInt()
                 infoBuilder.add(
                     Bus(
                         "${
@@ -492,6 +506,60 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         currentUserMarker = userMarker
         map.overlays.add(userMarker)
         map.invalidate()
+    }
+
+    @SuppressLint("SetTextI18n")
+    private fun showSeekBarDialog() {
+        val dialogBuilder = AlertDialog.Builder(this)
+        dialogBuilder.setTitle("Choose speed value:")
+
+        val currentSpeed = sharedPreferences.getInt("speed", 25)
+
+        val valueTextView = TextView(this).apply {
+            text = "Speed: $currentSpeed"
+            textSize = 18f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(35, 16, 0, 16)
+            }
+        }
+
+        val seekBar = SeekBar(this).apply {
+            max = 30
+            progress = currentSpeed - 10
+        }
+
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                valueTextView.text = "Speed: ${progress + 10}"
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            addView(valueTextView)
+            addView(seekBar)
+        }
+
+        dialogBuilder.setView(layout)
+        dialogBuilder.setPositiveButton("OK") { dialog, _ ->
+            val value = seekBar.progress
+            sharedPreferencesEditor.putInt("speed", value + 10).apply()
+            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+
+        dialogBuilder.setNegativeButton("Cancel") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        val dialog = dialogBuilder.create()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.borders)
+        dialog.show()
     }
 
     override fun onRequestPermissionsResult(

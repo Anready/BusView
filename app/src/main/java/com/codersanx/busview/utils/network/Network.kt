@@ -1,5 +1,7 @@
 package com.codersanx.busview.utils.network
 
+import android.content.Context
+import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -7,18 +9,23 @@ import okhttp3.Request
 import org.json.JSONArray
 
 class Network {
-    suspend fun getRoutes(): MutableList<String> = withContext(Dispatchers.IO) {
-        val client = OkHttpClient()
-        val request = Request.Builder()
-            .url("https://raw.githubusercontent.com/Anready/BusRoutes/refs/heads/main/routes.json")
-            .build()
-
-        val response = client.newCall(request).execute()
-        val routesArray = JSONArray(response.body!!.string())
-
+    suspend fun getRoutes(context: Context): MutableList<String> = withContext(Dispatchers.IO) {
         val allRoutes: MutableList<String> = mutableListOf()
-        for (i in 0 until routesArray.length()) {
-            allRoutes.add(routesArray.getString(i))
+
+        try {
+            val client = OkHttpClient()
+            val request = Request.Builder()
+                .url("https://raw.githubusercontent.com/Anready/BusRoutes/refs/heads/main/routes.json")
+                .build()
+
+            val response = client.newCall(request).execute()
+            val routesArray = JSONArray(response.body!!.string())
+
+            for (i in 0 until routesArray.length()) {
+                allRoutes.add(routesArray.getString(i))
+            }
+        } catch (e: Exception) {
+            Toast.makeText(context, "No internet", Toast.LENGTH_SHORT).show()
         }
 
         allRoutes
