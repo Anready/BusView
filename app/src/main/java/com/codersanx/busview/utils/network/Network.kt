@@ -3,6 +3,7 @@ package com.codersanx.busview.utils.network
 import android.content.Context
 import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -25,12 +26,14 @@ class Network {
             for (i in 0 until routesArray.length()) {
                 allRoutes.add(routesArray.getString(i))
             }
+
+            allRoutes
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {
               Toast.makeText(context, "No internet", Toast.LENGTH_SHORT).show()
             }
+            delay(5000)
+            getRoutes(context)
         }
-
-        allRoutes
     }
 }
