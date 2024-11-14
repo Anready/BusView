@@ -104,11 +104,11 @@ public class GetUpdate {
                 try {
                     PackageInfo packageInfo = context.getPackageManager().getPackageInfo(context.getPackageName(), 0);
                     versionName = packageInfo.versionName;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        versionCode = String.valueOf(packageInfo.getLongVersionCode());
-                    } else {
-                        versionCode = String.valueOf(packageInfo.versionCode);
-                    }
+                    versionCode = String.valueOf(
+                            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                                    ? packageInfo.getLongVersionCode()
+                                    : packageInfo.versionCode
+                    );
                 } catch (PackageManager.NameNotFoundException ignored) {
                 }
 

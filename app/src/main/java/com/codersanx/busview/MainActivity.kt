@@ -475,7 +475,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         return totalDistance
     }
 
-    fun calculateBearing(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
+    private fun calculateBearing(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
         val r1 = Math.toRadians(lat1)
         val r2 = Math.toRadians(lat2)
         val dL = Math.toRadians(lon2 - lon1)

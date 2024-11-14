@@ -11,8 +11,8 @@ android {
         applicationId = "com.codersanx.busview"
         minSdk = 21
         targetSdk = 34
-        versionCode = 3
-        versionName = "2.2"
+        versionCode = 4
+        versionName = "2.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -30,6 +30,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.add("-Xlint:deprecation")
+    }
     kotlinOptions {
         jvmTarget = "11"
     }
@@ -37,9 +40,9 @@ android {
 
 dependencies {
 
-    implementation ("org.osmdroid:osmdroid-android:6.1.10")
-    implementation("com.squareup.okhttp3:okhttp:4.9.1")
-    implementation ("com.squareup.moshi:moshi-kotlin:1.13.0")
+    implementation(libs.osmdroid.android)
+    implementation(libs.okhttp)
+    implementation(libs.moshi.kotlin)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
