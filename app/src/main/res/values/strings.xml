@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Bus View</string>
+    <string name="no_bus_available_on_this_route">No bus available on this route</string>
 </resources>

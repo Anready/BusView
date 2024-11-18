@@ -27,6 +27,9 @@ class Network {
                 allRoutes.add(routesArray.getString(i))
             }
 
+            // ONLY FOR TESTING !!!
+            allRoutes.add("1560: Parklane Hotel - My Mall###https://raw.githubusercontent.com/Anready/BusRoutes/refs/heads/main/30/Parklane_Hotel_-_My_Mall###Parklane Hoteo - New Port - My Mall")
+
             allRoutes
         } catch (e: Exception) {
             withContext(Dispatchers.Main) {

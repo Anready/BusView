@@ -22,6 +22,7 @@ import android.hardware.SensorManager
 import android.location.Location
 import android.net.Uri
 import android.os.Looper
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.ImageView
@@ -159,6 +160,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         route.setOnItemClickListener { _, _, _, _ ->
             initializeData()
+            findViewById<TextView>(R.id.warning).visibility = View.GONE
             getUserLocation(false)
         }
     }
@@ -361,6 +363,11 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                         busMarkers.add(busMarker)
                         map.overlays.add(busMarker)
                     }
+                }
+
+                if (busMarkers.isEmpty()) {
+                    findViewById<TextView>(R.id.warning).visibility = View.VISIBLE
+                    return@withContext
                 }
 
                 calculateDistancesToStop()
