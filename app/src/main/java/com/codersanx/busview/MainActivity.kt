@@ -1,7 +1,6 @@
 package com.codersanx.busview
 
 import android.annotation.SuppressLint
-import android.content.Context
 import com.codersanx.busview.utils.network.Network
 import android.content.Intent
 import android.content.SharedPreferences
@@ -74,7 +73,6 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private val locationCode = 1
     private val bottomSheetFragment = ShowTimeBuses()
 
-    private var currentBusMarker: Marker? = null
     private var locationCallback: LocationCallback? = null
 
     var selectedStopMarker: Marker? = null
@@ -110,7 +108,7 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
         setupLocationUpdates()
 
         sharedPreferences = getSharedPreferences("Settings", MODE_PRIVATE)
@@ -338,57 +336,30 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 busesJson?.keys()?.forEach { key ->
                     val bus = busesJson.getJSONObject(key)
                     if (bus.getString("RouteLongName") == getLongName(route.text.toString())) {
-                        val nearestIndex = findNearestPointIndex( GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude")), routeCoordinates)
-                        var bearing = 0.0F
-                        if (nearestIndex < routeCoordinates.lastIndex + 1) {
-                            bearing = calculateBearing(routeCoordinates[nearestIndex].latitude, routeCoordinates[nearestIndex].longitude, routeCoordinates[nearestIndex + 1].latitude, routeCoordinates[nearestIndex + 1].longitude)
-                        }
+                        var bearing = -(bus.getDouble("Bearing").toFloat() - 90F)
 
-                        if (currentBusMarker == null || currentBusMarker?.title != "Bus ${
-                                bus.getString(
-                                    "Label"
-                                )
-                            }"
-                        ) {
-                            val busMarker = Marker(map).apply {
-                                position =
-                                    GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
-                                icon =
-                                    ContextCompat.getDrawable(this@MainActivity, R.drawable.bus_map)
-                                title =
-                                    "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
-                                rotation = bearing
+                        val busMarker = Marker(map).apply {
+                            position =
+                                GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
+                            icon =
+                                ContextCompat.getDrawable(this@MainActivity, R.drawable.bus_map)
+                            title =
+                                "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                            rotation = bearing
 
-                                setOnMarkerClickListener { _, _ ->
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    true
-                                }
-                            }
-                            busMarkers.add(busMarker)
-                            map.overlays.add(busMarker)
-                            currentBusMarker = busMarker
-                        } else {
-                            currentBusMarker?.apply {
-                                position =
-                                    GeoPoint(bus.getDouble("Latitude"), bus.getDouble("Longitude"))
-                                title =
-                                    "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
-                                rotation = bearing
-                                map.overlays.add(this)
-                                setOnMarkerClickListener { _, _ ->
-                                    Toast.makeText(
-                                        this@MainActivity,
-                                        "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    true
-                                }
+
+                            setOnMarkerClickListener { _, _ ->
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Bus ${bus.getString("Label")}\n bearing: $bearing", //Speed: ${bus.getDouble("SpeedKmPerHour")} km/h
+
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                true
                             }
                         }
+                        busMarkers.add(busMarker)
+                        map.overlays.add(busMarker)
                     }
                 }
 
@@ -473,18 +444,6 @@ class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             )
         }
         return totalDistance
-    }
-
-    private fun calculateBearing(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
-        val r1 = Math.toRadians(lat1)
-        val r2 = Math.toRadians(lat2)
-        val dL = Math.toRadians(lon2 - lon1)
-
-        val y = sin(dL) * cos(r2)
-        val x = cos(r1) * sin(r2) - sin(r1) * cos(r2) * cos(dL)
-        val bearing = Math.toDegrees(atan2(y, x))
-
-        return ((bearing + 360) % 360).toFloat()
     }
 
     private fun findNearestPointIndex(point: GeoPoint, routeCoordinates: List<GeoPoint>): Int {
