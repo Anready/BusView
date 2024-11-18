@@ -45,7 +45,7 @@ class BusNetwork(private val map: MapView, private val activity: MainActivity) {
             allRoutes
         } catch (_: Exception) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "No internet", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, activity.getString(R.string.no_internet), Toast.LENGTH_SHORT).show()
             }
             delay(5000)
             getRoutes(context)
@@ -141,15 +141,22 @@ class BusNetwork(private val map: MapView, private val activity: MainActivity) {
                             icon =
                                 ContextCompat.getDrawable(activity, R.drawable.bus_map)
                             title =
-                                "Bus ${bus.getString("Label")}\nSpeed: ${bus.getDouble("SpeedKmPerHour")} km/h"
+                                activity.getString(
+                                    R.string.label_bus,
+                                    bus.getString("Label"),
+                                    bus.getDouble("SpeedKmPerHour")
+                                )
                             rotation = bearing
 
 
                             setOnMarkerClickListener { _, _ ->
                                 Toast.makeText(
                                     activity,
-                                    "Bus ${bus.getString("Label")}\n bearing: $bearing", //Speed: ${bus.getDouble("SpeedKmPerHour")} km/h
-
+                                    activity.getString(
+                                        R.string.label_bus,
+                                        bus.getString("Label"),
+                                        bus.getDouble("SpeedKmPerHour")
+                                    ),
                                     Toast.LENGTH_SHORT
                                 ).show()
                                 true

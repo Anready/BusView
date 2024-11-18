@@ -110,7 +110,7 @@ class MapControl(private val map: MapView, private val activity: MainActivity) {
     fun updateUserMarker(location: GeoPoint, bearing: Float?) {
         if (activity.currentUserMarker == null) {
             activity.currentUserMarker = Marker(map).apply {
-                title = "You are here"
+                title = activity.getString(R.string.you_are_here)
                 icon = ContextCompat.getDrawable(activity, R.drawable.ic_location)
                 setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
                 map.overlays.add(this)
@@ -132,7 +132,7 @@ class MapControl(private val map: MapView, private val activity: MainActivity) {
     fun addUserMarker(location: GeoPoint, bearing: Float) {
         val userMarker = Marker(map).apply {
             position = location
-            title = "You are here"
+            title = activity.getString(R.string.you_are_here)
             icon = ContextCompat.getDrawable(activity, R.drawable.ic_location)
             rotation = bearing  // Rotate the marker
             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)  // Set the rotation pivot

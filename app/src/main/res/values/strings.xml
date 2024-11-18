@@ -1,4 +1,21 @@
 <resources>
     <string name="app_name">Bus View</string>
     <string name="no_bus_available_on_this_route">No bus available on this route</string>
+    <string name="center_map">Center map</string>
+    <string name="settings">Settings</string>
+    <string name="speed">Choose speed value:</string>
+    <string name="current_speed">Speed: %1$d</string>
+    <string name="saved">Saved</string>
+    <string name="cancel">Cancel</string>
+    <string name="enable_location">GPS is off. Please enable it.</string>
+    <string name="enable">Enable</string>
+    <string name="give_permission">Location permission is required to show your location on the map</string>
+    <string name="update_available">Update Available</string>
+    <string name="whats_new">Whats new?\n%1$s</string>
+    <string name="update">Update</string>
+    <string name="later">Later</string>
+    <string name="choose_route">Choose route</string>
+    <string name="label_bus">Bus %1$s\nSpeed: %2$f km/h</string>
+    <string name="no_internet">No internet</string>
+    <string name="you_are_here">You are here</string>
 </resources>

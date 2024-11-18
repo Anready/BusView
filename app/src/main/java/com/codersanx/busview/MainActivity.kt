@@ -1,6 +1,5 @@
 package com.codersanx.busview
 
-import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -17,7 +16,6 @@ import android.provider.Settings
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.TextView
@@ -31,6 +29,7 @@ import com.codersanx.busview.main.MapControl
 import com.codersanx.busview.main.BusNetwork
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -98,14 +97,14 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             route.isFocusableInTouchMode = false
             route.setAdapter(adapter)
 
-            route.hint = "Choose route"
+            route.hint = getString(R.string.choose_route)
 
             setupMap()
             startBusUpdates()
         }
 
-        val imageView: ImageView = findViewById(R.id.imageView2)
-        imageView.setOnClickListener {
+        val floatingActionButton: FloatingActionButton = findViewById(R.id.floatingActionButton)
+        floatingActionButton.setOnClickListener {
             if (currentUserMarker == null) {
                 return@setOnClickListener
             }
@@ -113,7 +112,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             MapControl(map, this).centerMapOnLocation(currentUserMarker!!.position)
         }
 
-        val settings: ImageView = findViewById(R.id.imageView3)
+        val settings: FloatingActionButton = findViewById(R.id.floatingSettings)
         settings.setOnClickListener {
             showSeekBarDialog()
         }
@@ -152,15 +151,14 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         }
     }
 
-    @SuppressLint("SetTextI18n")
     private fun showSeekBarDialog() {
         val dialogBuilder = AlertDialog.Builder(this)
-        dialogBuilder.setTitle("Choose speed value:")
+        dialogBuilder.setTitle(getString(R.string.speed))
 
         val currentSpeed = sharedPreferences.getInt("speed", 25)
 
         val valueTextView = TextView(this).apply {
-            text = "Speed: $currentSpeed"
+            text = getString(R.string.current_speed, currentSpeed)
             textSize = 18f
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -177,7 +175,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                valueTextView.text = "Speed: ${progress + 10}"
+                valueTextView.text = getString(R.string.current_speed,progress + 10)
             }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
@@ -193,11 +191,11 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         dialogBuilder.setPositiveButton("OK") { dialog, _ ->
             val value = seekBar.progress
             sharedPreferencesEditor.putInt("speed", value + 10).apply()
-            Toast.makeText(this, "Saved", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, getString(R.string.saved), Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
 
-        dialogBuilder.setNegativeButton("Cancel") { dialog, _ ->
+        dialogBuilder.setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
             dialog.dismiss()
         }
 
@@ -208,11 +206,11 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     fun promptUserToEnableLocation() {
         AlertDialog.Builder(this)
-            .setMessage("GPS is off. Please enable it.")
-            .setPositiveButton("Enable") { _, _ ->
+            .setMessage(getString(R.string.enable_location))
+            .setPositiveButton(getString(R.string.enable)) { _, _ ->
                 startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
-            .setNegativeButton("Cancel", null)
+            .setNegativeButton(getString(R.string.cancel), null)
             .show()
     }
 
@@ -228,7 +226,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             } else {
                 Toast.makeText(
                     this,
-                    "Location permission is required to show your location on the map",
+                    getString(R.string.give_permission),
                     Toast.LENGTH_LONG
                 ).show()
             }
@@ -265,16 +263,20 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         val builder = AlertDialog.Builder(this)
         builder.setCancelable(false)
-        builder.setTitle("Update Available")
-        builder.setMessage("Whats new?\n $description")
-        builder.setPositiveButton("Update") { _, _ ->
+        builder.setTitle(getString(R.string.update_available))
+        builder.setMessage(getString(R.string.whats_new, description))
+        builder.setPositiveButton(getString(R.string.update)) { _, _ ->
             startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
         }
 
         if (update[3].toLong() - update[2].toLong() == 1L) {
-            builder.setNegativeButton("Later") { dialogInterface, _ -> dialogInterface.dismiss() }
+            builder.setNegativeButton(getString(R.string.later)) { dialogInterface, _ -> dialogInterface.dismiss() }
         }
 
-        runOnUiThread { builder.show() }
+        runOnUiThread {
+            val dialog = builder.create()
+            dialog.window?.setBackgroundDrawableResource(R.drawable.borders)
+            dialog.show()
+        }
     }
 }
