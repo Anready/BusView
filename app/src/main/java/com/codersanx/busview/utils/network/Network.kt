@@ -28,10 +28,10 @@ class Network {
             }
 
             // ONLY FOR TESTING !!!
-            allRoutes.add("1560: Parklane Hotel - My Mall###https://raw.githubusercontent.com/Anready/BusRoutes/refs/heads/main/30/Parklane_Hotel_-_My_Mall###Parklane Hoteo - New Port - My Mall")
+            // allRoutes.add("1560: Parklane Hotel - My Mall###https://raw.githubusercontent.com/Anready/BusRoutes/refs/heads/main/30/Parklane_Hotel_-_My_Mall###Parklane Hoteo - New Port - My Mall")
 
             allRoutes
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             withContext(Dispatchers.Main) {
               Toast.makeText(context, "No internet", Toast.LENGTH_SHORT).show()
             }
