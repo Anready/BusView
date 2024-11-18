@@ -8,10 +8,8 @@ import android.widget.TextView
 import com.codersanx.busview.MainActivity
 import com.codersanx.busview.R
 
-class BusAdapter(activity: MainActivity, private val items: List<Bus>) :
+class BusAdapter(private val activity: MainActivity, private val items: List<Bus>) :
     ArrayAdapter<Bus>(activity, 0, items) {
-
-    private val mainActivity: MainActivity = activity
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         val view =
@@ -21,7 +19,7 @@ class BusAdapter(activity: MainActivity, private val items: List<Bus>) :
 
         val itemText = view.findViewById<TextView>(R.id.item_text)
         view.setOnClickListener {
-            mainActivity.centerMapOnLocation(item.location)
+            activity.mapControl.centerMapOnLocation(item.location)
         }
         itemText.text = item.name
 

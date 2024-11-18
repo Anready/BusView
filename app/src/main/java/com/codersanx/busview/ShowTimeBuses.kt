@@ -75,10 +75,10 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
     override fun onDismiss(dialog: android.content.DialogInterface) {
         super.onDismiss(dialog)
         val mainAct = activity as MainActivity
-        mainAct.selectedStopMarker?.icon = 
+        mainAct.mapControl.selectedStopMarker?.icon =
         ContextCompat.getDrawable(requireContext(), R.drawable.bus_stop)
     
         // Clear the selected marker
-        mainAct.selectedStopMarker = null
+        mainAct.mapControl.selectedStopMarker = null
     }
 }
