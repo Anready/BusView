@@ -5,14 +5,14 @@ plugins {
 
 android {
     namespace = "com.codersanx.busview"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.codersanx.busview"
         minSdk = 21
-        targetSdk = 34
-        versionCode = 4
-        versionName = "2.3"
+        targetSdk = 35
+        versionCode = 5
+        versionName = "2.4.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
