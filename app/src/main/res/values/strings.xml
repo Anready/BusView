@@ -15,7 +15,7 @@
     <string name="update">Update</string>
     <string name="later">Later</string>
     <string name="choose_route">Choose route</string>
-    <string name="label_bus">Bus %1$s\nSpeed: %2$f km/h</string>
+    <string name="label_bus">Bus %1$s\nSpeed: %2$d km/h</string>
     <string name="no_internet">No internet</string>
     <string name="you_are_here">You are here</string>
 </resources>

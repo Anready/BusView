@@ -144,7 +144,7 @@ class BusNetwork(private val map: MapView, private val activity: MainActivity) {
                                 activity.getString(
                                     R.string.label_bus,
                                     bus.getString("Label"),
-                                    bus.getDouble("SpeedKmPerHour")
+                                    bus.getDouble("SpeedKmPerHour").toInt()
                                 )
                             rotation = bearing
 
@@ -155,7 +155,7 @@ class BusNetwork(private val map: MapView, private val activity: MainActivity) {
                                     activity.getString(
                                         R.string.label_bus,
                                         bus.getString("Label"),
-                                        bus.getDouble("SpeedKmPerHour")
+                                        bus.getDouble("SpeedKmPerHour").toInt()
                                     ),
                                     Toast.LENGTH_SHORT
                                 ).show()

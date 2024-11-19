@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Bus View</string>
+    <string name="no_bus_available_on_this_route">На цьому маршруті немає автобусів</string>
+    <string name="center_map">Центрувати карту</string>
+    <string name="settings">Налаштування</string>
+    <string name="speed">Оберіть значення швидкості:</string>
+    <string name="current_speed">Швидкість: %1$d</string>
+    <string name="saved">Збережено</string>
+    <string name="cancel">Скасувати</string>
+    <string name="enable_location">GPS вимкнено. Увімкніть його, будь ласка.</string>
+    <string name="enable">Увімкнути</string>
+    <string name="give_permission">Для відображення вашого місця на карті потрібен дозвіл на доступ до місцезнаходження</string>
+    <string name="update_available">Доступне оновлення</string>
+    <string name="whats_new">Що нового?\n%1$s</string>
+    <string name="update">Оновити</string>
+    <string name="later">Пізніше</string>
+    <string name="choose_route">Оберіть маршрут</string>
+    <string name="label_bus">Автобус %1$s\nШвидкість: %2$d км/год</string>
+    <string name="no_internet">Немає інтернету</string>
+    <string name="you_are_here">Ви тут</string>
+</resources>

@@ -11,6 +11,7 @@ import org.osmdroid.views.overlay.Marker
 import kotlinx.coroutines.*
 import android.hardware.Sensor
 import android.hardware.SensorManager
+import android.location.LocationManager
 import android.net.Uri
 import android.provider.Settings
 import android.view.View
@@ -105,6 +106,12 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         val floatingActionButton: FloatingActionButton = findViewById(R.id.floatingActionButton)
         floatingActionButton.setOnClickListener {
+            val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
+            if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                promptUserToEnableLocation()
+                return@setOnClickListener
+            }
+
             if (currentUserMarker == null) {
                 return@setOnClickListener
             }
@@ -205,13 +212,16 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     }
 
     fun promptUserToEnableLocation() {
-        AlertDialog.Builder(this)
+        val builder = AlertDialog.Builder(this)
             .setMessage(getString(R.string.enable_location))
             .setPositiveButton(getString(R.string.enable)) { _, _ ->
                 startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))
             }
             .setNegativeButton(getString(R.string.cancel), null)
-            .show()
+
+        val dialog = builder.create()
+        dialog.window?.setBackgroundDrawableResource(R.drawable.borders)
+        dialog.show()
     }
 
     override fun onRequestPermissionsResult(
