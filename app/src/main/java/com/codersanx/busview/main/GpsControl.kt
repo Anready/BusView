@@ -21,7 +21,7 @@ import org.osmdroid.util.GeoPoint
 class GpsControl(private val fusedLocationClient: FusedLocationProviderClient, private val activity: MainActivity) {
     private val locationCode = 1
     private var locationCallback: LocationCallback? = null
-    lateinit var locationRequest: LocationRequest
+    private lateinit var locationRequest: LocationRequest
 
     fun setupLocationUpdates() {
         locationRequest = LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 5000L)
@@ -62,8 +62,6 @@ class GpsControl(private val fusedLocationClient: FusedLocationProviderClient, p
                     if (center) {
                         activity.mapControl.centerMapOnLocation(userLocation)
                     }
-                } ?: run {
-                    activity.promptUserToEnableLocation()
                 }
             }
         }

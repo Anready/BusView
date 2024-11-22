@@ -8,7 +8,7 @@
     <string name="current_speed">Ταχύτητα: %1$d</string>
     <string name="saved">Αποθηκεύτηκε</string>
     <string name="cancel">Ακύρωση</string>
-    <string name="enable_location">Το GPS είναι απενεργοποιημένο. Παρακαλώ ενεργοποιήστε το.</string>
+    <string name="enable_location">Το GPS είναι απενεργοποιημένο. Παρακαλώ ενεργοποιήστε το</string>
     <string name="enable">Ενεργοποίηση</string>
     <string name="give_permission">Απαιτείται άδεια τοποθεσίας για να εμφανιστεί η τοποθεσία σας στον χάρτη</string>
     <string name="update_available">Διαθέσιμη ενημέρωση</string>

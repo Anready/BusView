@@ -133,7 +133,7 @@ class BusNetwork(private val map: MapView, private val activity: MainActivity) {
                 busesJson?.keys()?.forEach { key ->
                     val bus = busesJson.getJSONObject(key)
                     if (bus.getString("RouteLongName") == getLongName(activity.route.text.toString())) {
-                        var bearing = -(bus.getDouble("Bearing").toFloat() - 90F)
+                        val bearing = -(bus.getDouble("Bearing").toFloat() - 90F)
 
                         val busMarker = Marker(map).apply {
                             position =

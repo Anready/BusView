@@ -1,5 +1,6 @@
 package com.codersanx.busview
 
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -22,8 +23,8 @@ import android.widget.SeekBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
-import com.codersanx.busview.utils.Route
-import com.codersanx.busview.utils.network.GetUpdate
+import com.codersanx.busview.models.Route
+import com.codersanx.busview.network.GetUpdate
 import android.widget.Toast
 import com.codersanx.busview.main.GpsControl
 import com.codersanx.busview.main.MapControl
@@ -39,19 +40,20 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private lateinit var sensorManager: SensorManager
     private lateinit var sharedPreferencesEditor: SharedPreferences.Editor
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var gpsControl: GpsControl
+    private lateinit var busNetwork: BusNetwork
+
+    private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
     lateinit var map: MapView
     lateinit var route: AutoCompleteTextView
     lateinit var sharedPreferences: SharedPreferences
-    lateinit var fusedLocationClient: FusedLocationProviderClient
-    lateinit var gpsControl: GpsControl
     lateinit var mapControl: MapControl
-    lateinit var busNetwork: BusNetwork
 
     val busMarkers = mutableListOf<Marker>()
     val routeCoordinates = mutableListOf<GeoPoint>()
     val routes: MutableList<Route> = mutableListOf()
-    val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
     var currentUserMarker: Marker? = null
 
@@ -61,26 +63,31 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
-        Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
-
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-
-        gpsControl = GpsControl(fusedLocationClient, this)
-        gpsControl.setupLocationUpdates()
-
-        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-
-        sharedPreferences = getSharedPreferences("Settings", MODE_PRIVATE)
-        sharedPreferencesEditor = sharedPreferences.edit()
-
-        val fetchData = GetUpdate("https://codersanx.netlify.app/api/appsn", this, this)
-        fetchData.getUpdateInformation()
-
         map = findViewById(R.id.map)
         route = findViewById(R.id.currentBus)
 
+        Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
+        sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
+        sharedPreferences = getSharedPreferences("Settings", MODE_PRIVATE)
+        sharedPreferencesEditor = sharedPreferences.edit()
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
         mapControl = MapControl(map, this)
         busNetwork = BusNetwork(map, this)
+        gpsControl = GpsControl(fusedLocationClient, this)
+        gpsControl.setupLocationUpdates()
+
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+            promptUserToEnableLocation()
+        }
+
+        val fetchData = GetUpdate(
+            "https://codersanx.netlify.app/api/appsn",
+            this,
+            this
+        )
+        fetchData.getUpdateInformation()
 
         coroutineScope.launch {
             val allRoutes = busNetwork.getRoutes(this@MainActivity)
@@ -106,7 +113,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         val floatingActionButton: FloatingActionButton = findViewById(R.id.floatingActionButton)
         floatingActionButton.setOnClickListener {
-            val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
             if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
                 promptUserToEnableLocation()
                 return@setOnClickListener
@@ -131,6 +137,15 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         }
     }
 
+    private fun initializeData() {
+        coroutineScope.launch {
+            map.overlays.clear()
+            routeCoordinates.clear()
+            busNetwork.loadStops()
+            busNetwork.loadRoute()
+        }
+    }
+
     private fun setupMap() {
         map.setTileSource(TileSourceFactory.MAPNIK)
         map.setMultiTouchControls(true)
@@ -146,15 +161,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 busNetwork.showBuses()
                 delay(5000)
             }
-        }
-    }
-
-    private fun initializeData() {
-        coroutineScope.launch {
-            map.overlays.clear()
-            routeCoordinates.clear()
-            busNetwork.loadStops()
-            busNetwork.loadRoute()
         }
     }
 
@@ -211,7 +217,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         dialog.show()
     }
 
-    fun promptUserToEnableLocation() {
+    private fun promptUserToEnableLocation() {
         val builder = AlertDialog.Builder(this)
             .setMessage(getString(R.string.enable_location))
             .setPositiveButton(getString(R.string.enable)) { _, _ ->

@@ -8,7 +8,7 @@
     <string name="current_speed">Швидкість: %1$d</string>
     <string name="saved">Збережено</string>
     <string name="cancel">Скасувати</string>
-    <string name="enable_location">GPS вимкнено. Увімкніть його, будь ласка.</string>
+    <string name="enable_location">GPS вимкнено. Увімкніть його, будь ласка</string>
     <string name="enable">Увімкнути</string>
     <string name="give_permission">Для відображення вашого місця на карті потрібен дозвіл на доступ до місцезнаходження</string>
     <string name="update_available">Доступне оновлення</string>

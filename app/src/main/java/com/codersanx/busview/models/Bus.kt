@@ -1,4 +1,4 @@
-package com.codersanx.busview.utils
+package com.codersanx.busview.models
 
 import org.osmdroid.util.GeoPoint
 

@@ -11,8 +11,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ListView
-import com.codersanx.busview.utils.Bus
-import com.codersanx.busview.utils.BusAdapter
+import com.codersanx.busview.models.Bus
+import com.codersanx.busview.adapters.BusAdapter
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class ShowTimeBuses : BottomSheetDialogFragment() {
 
@@ -22,6 +23,7 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
     private lateinit var listView: ListView
     private lateinit var stopNameTextView: TextView
     private lateinit var openStopOnMap: ImageView
+    private lateinit var centerOnStop: FloatingActionButton
     private var adapter: BusAdapter? = null  // Initialize adapter as nullable
 
     override fun onCreateView(
@@ -32,6 +34,7 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
         
         stopNameTextView = view.findViewById(R.id.stop_name_text_view)
         openStopOnMap = view.findViewById(R.id.imageView)
+        centerOnStop = view.findViewById(R.id.fab)
         // Initialize ListView
         listView = view.findViewById(R.id.my_list_view)
         return view
@@ -49,6 +52,13 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
             val mapIntent = Intent(Intent.ACTION_VIEW, url)
             mapIntent.setPackage("com.google.android.apps.maps")
             startActivity(mapIntent)
+        }
+
+        centerOnStop.setOnClickListener {
+            val act = activity as MainActivity
+            if (act.mapControl.selectedStopMarker != null) {
+                act.mapControl.centerMapOnLocation(act.mapControl.selectedStopMarker!!.position)
+            }
         }
     }
 

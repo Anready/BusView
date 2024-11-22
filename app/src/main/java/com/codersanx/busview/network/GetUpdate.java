@@ -1,4 +1,4 @@
-package com.codersanx.busview.utils.network;
+package com.codersanx.busview.network;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;

@@ -7,7 +7,7 @@
     <string name="current_speed">Speed: %1$d</string>
     <string name="saved">Saved</string>
     <string name="cancel">Cancel</string>
-    <string name="enable_location">GPS is off. Please enable it.</string>
+    <string name="enable_location">GPS is off. Please enable it</string>
     <string name="enable">Enable</string>
     <string name="give_permission">Location permission is required to show your location on the map</string>
     <string name="update_available">Update Available</string>

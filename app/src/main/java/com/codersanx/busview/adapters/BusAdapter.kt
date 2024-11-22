@@ -1,4 +1,4 @@
-package com.codersanx.busview.utils
+package com.codersanx.busview.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -7,6 +7,7 @@ import android.widget.ArrayAdapter
 import android.widget.TextView
 import com.codersanx.busview.MainActivity
 import com.codersanx.busview.R
+import com.codersanx.busview.models.Bus
 
 class BusAdapter(private val activity: MainActivity, private val items: List<Bus>) :
     ArrayAdapter<Bus>(activity, 0, items) {

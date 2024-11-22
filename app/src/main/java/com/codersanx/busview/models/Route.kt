@@ -1,4 +1,4 @@
-package com.codersanx.busview.utils
+package com.codersanx.busview.models
 
 data class Route(
     val label: String,

@@ -1,47 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
     android:padding="16dp">
 
-
-
     <LinearLayout
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center">
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Time for a bus"
+                android:textSize="25sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/bus_stop" />
+        </LinearLayout>
+
         <TextView
+            android:id="@+id/stop_name_text_view"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="Time for a bus"
-            android:textSize="25sp"
+            android:text="Stop Name"
+            android:textSize="20sp"
             android:textStyle="bold" />
 
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="wrap_content"
+        <ListView
+            android:id="@+id/my_list_view"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:src="@drawable/bus_stop" />
-
+            android:layout_marginTop="10dp" />
     </LinearLayout>
 
-
-    <TextView
-        android:id="@+id/stop_name_text_view"
+    <!-- FloatingActionButton -->
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:text="Stop Name"
-        android:textSize="20sp"
-        android:textStyle="bold" />
-
-    <ListView
-        android:id="@+id/my_list_view"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp" />
-
-</LinearLayout>
+        android:layout_gravity="end|bottom"
+        android:layout_margin="10dp"
+        android:contentDescription="Center on a stop"
+        app:srcCompat="@drawable/bus_stop_selected" />
+</FrameLayout>

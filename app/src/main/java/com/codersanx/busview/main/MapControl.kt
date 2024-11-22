@@ -5,7 +5,7 @@ import androidx.core.content.ContextCompat
 import com.codersanx.busview.MainActivity
 import com.codersanx.busview.R
 import com.codersanx.busview.ShowTimeBuses
-import com.codersanx.busview.utils.Bus
+import com.codersanx.busview.models.Bus
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
@@ -17,7 +17,7 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 
 class MapControl(private val map: MapView, private val activity: MainActivity) {
-    val bottomSheetFragment = ShowTimeBuses()
+    private val bottomSheetFragment = ShowTimeBuses()
     var selectedStopMarker: Marker? = null
 
     fun selectStop(marker: Marker) {
