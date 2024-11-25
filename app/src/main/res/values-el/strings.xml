@@ -19,5 +19,5 @@
     <string name="label_bus">Λεωφορείο %1$s\nΤαχύτητα: %2$d χλμ/ώρα</string>
     <string name="no_internet">Δεν υπάρχει σύνδεση στο διαδίκτυο</string>
     <string name="you_are_here">Είστε εδώ</string>
-    <string name="dark_mode">Dark mode</string>
+    <string name="dark_mode">Σκοτεινή λειτουργία</string>
 </resources>
