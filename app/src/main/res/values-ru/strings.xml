@@ -19,5 +19,5 @@
     <string name="label_bus">Автобус %1$s\nСкорость: %2$d км/ч</string>
     <string name="no_internet">Нет интернета</string>
     <string name="you_are_here">Вы здесь</string>
-    <string name="dark_mode">Dark mode</string>
+    <string name="dark_mode">Темная тема</string>
 </resources>
