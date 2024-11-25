@@ -45,7 +45,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="8dp"
-        android:layout_marginBottom="16dp"
+        android:layout_marginBottom="48dp"
         android:clickable="true"
         android:contentDescription="@string/center_map"
         android:focusable="true"
