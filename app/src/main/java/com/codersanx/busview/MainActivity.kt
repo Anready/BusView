@@ -219,6 +219,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         val themeSwitch = SwitchMaterial(this).apply {
             text = getString(R.string.dark_mode)
+            textSize = 16f
             isChecked = sharedPreferences.getBoolean("dark_mode", false)
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
