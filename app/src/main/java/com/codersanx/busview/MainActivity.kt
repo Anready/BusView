@@ -228,7 +228,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             }
         }
 
-        val languages = arrayOf("English", "Russian", "Ukrainian", "Greek")
+        val languages = arrayOf("English", "Русский", "Українська", "Ελληνικά")
         val codes = arrayOf("en", "ru", "uk", "el")
 
         val languageChooser = Spinner(this).apply {
