@@ -20,21 +20,25 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.LinearLayout
 import android.widget.SeekBar
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import com.codersanx.busview.models.Route
 import com.codersanx.busview.network.GetUpdate
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatDelegate
 import com.codersanx.busview.main.GpsControl
 import com.codersanx.busview.main.MapControl
 import com.codersanx.busview.main.BusNetwork
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.switchmaterial.SwitchMaterial
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import java.util.Locale
 
 
 open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
@@ -60,6 +64,19 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        sharedPreferences = getSharedPreferences("Settings", MODE_PRIVATE)
+
+        val isDarkMode = sharedPreferences.getBoolean("dark_mode", false)
+        AppCompatDelegate.setDefaultNightMode(
+            if (isDarkMode) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+        )
+
+        // Apply language
+        val codes = arrayOf("en", "ru", "uk", "el")
+        updateLocale(codes[sharedPreferences.getInt("language_index", 0)])
+
+
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
@@ -68,7 +85,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
-        sharedPreferences = getSharedPreferences("Settings", MODE_PRIVATE)
         sharedPreferencesEditor = sharedPreferences.edit()
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
@@ -166,45 +182,108 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     private fun showSeekBarDialog() {
         val dialogBuilder = AlertDialog.Builder(this)
-        dialogBuilder.setTitle(getString(R.string.speed))
+        dialogBuilder.setTitle(getString(R.string.settings))
 
         val currentSpeed = sharedPreferences.getInt("speed", 25)
 
         val valueTextView = TextView(this).apply {
             text = getString(R.string.current_speed, currentSpeed)
-            textSize = 18f
+            textSize = 16f
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                setMargins(35, 16, 0, 16)
+                setMargins(55, 36, 0, 16)
             }
         }
 
         val seekBar = SeekBar(this).apply {
             max = 30
             progress = currentSpeed - 10
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(15, 16, 15, 16)
+            }
         }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-                valueTextView.text = getString(R.string.current_speed,progress + 10)
+                valueTextView.text = getString(R.string.current_speed, progress + 10)
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
+
+        val themeSwitch = SwitchMaterial(this).apply {
+            text = getString(R.string.dark_mode)
+            isChecked = sharedPreferences.getBoolean("dark_mode", false)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(55, 16, 55, 16)
+            }
+        }
+
+        val languages = arrayOf("English", "Russian", "Ukrainian", "Greek")
+        val codes = arrayOf("en", "ru", "uk", "el")
+
+        val languageChooser = Spinner(this).apply {
+            val adapter = ArrayAdapter(
+                this@MainActivity,
+                android.R.layout.simple_spinner_item,
+                languages
+            )
+            adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+            this.adapter = adapter
+            setSelection(sharedPreferences.getInt("language_index", 0))
+
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(35, 16, 35, 16)
+            }
+        }
 
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             addView(valueTextView)
             addView(seekBar)
+            addView(themeSwitch)
+            addView(languageChooser)
         }
 
         dialogBuilder.setView(layout)
         dialogBuilder.setPositiveButton("OK") { dialog, _ ->
+            var wasChanged = false
             val value = seekBar.progress
             sharedPreferencesEditor.putInt("speed", value + 10).apply()
-            Toast.makeText(this, getString(R.string.saved), Toast.LENGTH_SHORT).show()
+
+            if (sharedPreferences.getInt("language_index", 0) != languageChooser.selectedItemPosition) {
+                sharedPreferencesEditor.putInt("language_index", languageChooser.selectedItemPosition).apply()
+                updateLocale(codes[languageChooser.selectedItemPosition])
+                wasChanged = true
+            }
+
+            if (sharedPreferences.getBoolean("dark_mode", false) != themeSwitch.isChecked){
+                sharedPreferencesEditor.putBoolean("dark_mode", themeSwitch.isChecked).apply()
+                AppCompatDelegate.setDefaultNightMode(
+                    if (themeSwitch.isChecked) AppCompatDelegate.MODE_NIGHT_YES else AppCompatDelegate.MODE_NIGHT_NO
+                )
+                wasChanged = true
+            }
+
+            if (wasChanged) {
+                Toast.makeText(this, getString(R.string.saved), Toast.LENGTH_SHORT).show()
+
+                startActivity(Intent(this, MainActivity::class.java))
+                finish()
+            }
+
             dialog.dismiss()
         }
 
@@ -215,6 +294,16 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         val dialog = dialogBuilder.create()
         dialog.window?.setBackgroundDrawableResource(R.drawable.borders)
         dialog.show()
+    }
+
+    private fun updateLocale(languageCode: String) {
+        val locale = Locale(languageCode)
+        Locale.setDefault(locale)
+
+        val config = resources.configuration
+        config.setLocale(locale)
+
+        resources.updateConfiguration(config, resources.displayMetrics)
     }
 
     private fun promptUserToEnableLocation() {
