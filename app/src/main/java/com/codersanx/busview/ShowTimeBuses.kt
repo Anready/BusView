@@ -13,6 +13,7 @@ import android.widget.ImageView
 import android.widget.ListView
 import com.codersanx.busview.models.Bus
 import com.codersanx.busview.adapters.BusAdapter
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class ShowTimeBuses : BottomSheetDialogFragment() {
@@ -42,6 +43,15 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        val bottomSheet = dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.let {
+            val behavior = BottomSheetBehavior.from(it)
+            val maxHeight = (resources.displayMetrics.heightPixels * 0.45).toInt()
+            it.layoutParams.height = maxHeight
+            behavior.peekHeight = maxHeight
+            it.requestLayout()
+        }
 
         // Initialize the adapter with the current item list and set it to the ListView
         adapter = BusAdapter(activity as MainActivity, item)

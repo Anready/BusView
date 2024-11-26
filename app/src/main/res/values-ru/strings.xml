@@ -20,4 +20,5 @@
     <string name="no_internet">Нет интернета</string>
     <string name="you_are_here">Вы здесь</string>
     <string name="dark_mode">Темная тема</string>
+    <string name="star">Заметка</string>
 </resources>

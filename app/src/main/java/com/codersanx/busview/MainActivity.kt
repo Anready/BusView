@@ -28,6 +28,7 @@ import com.codersanx.busview.models.Route
 import com.codersanx.busview.network.GetUpdate
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
+import com.codersanx.busview.adapters.SelectRouteAdapter
 import com.codersanx.busview.main.GpsControl
 import com.codersanx.busview.main.MapControl
 import com.codersanx.busview.main.BusNetwork
@@ -76,7 +77,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         val codes = arrayOf("en", "ru", "uk", "el")
         updateLocale(codes[sharedPreferences.getInt("language_index", 0)])
 
-
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
 
@@ -115,11 +115,16 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 names.add(data[0])
             }
 
-            val adapter: ArrayAdapter<String> =
-                ArrayAdapter<String>(this@MainActivity, R.layout.route_item, names)
+            val adapter = SelectRouteAdapter(this@MainActivity, names, sharedPreferences)
+            adapter.sortByStarred()
+
             route.isFocusable = false
             route.isFocusableInTouchMode = false
             route.setAdapter(adapter)
+
+            val maxVisibleItems = 5
+            val itemHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
+            route.dropDownHeight = maxVisibleItems * itemHeight
 
             route.hint = getString(R.string.choose_route)
 

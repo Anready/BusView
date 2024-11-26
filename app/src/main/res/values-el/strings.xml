@@ -20,4 +20,5 @@
     <string name="no_internet">Δεν υπάρχει σύνδεση στο διαδίκτυο</string>
     <string name="you_are_here">Είστε εδώ</string>
     <string name="dark_mode">Σκοτεινή λειτουργία</string>
+    <string name="star">star</string>
 </resources>
