@@ -21,4 +21,7 @@
     <string name="you_are_here">Ви тут</string>
     <string name="dark_mode">Темний режим</string>
     <string name="star">star</string>
+    <string name="version">Version: %1$s</string>
+    <string name="percent">%1$d%%</string>
+    <string name="check_updates">Check updates</string>
 </resources>

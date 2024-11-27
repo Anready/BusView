@@ -4,41 +4,49 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
-import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import org.osmdroid.util.GeoPoint
-import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Marker
-import kotlinx.coroutines.*
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.location.LocationManager
 import android.net.Uri
+import android.os.Bundle
 import android.provider.Settings
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
+import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
-import com.codersanx.busview.models.Route
-import com.codersanx.busview.network.GetUpdate
-import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
 import com.codersanx.busview.adapters.SelectRouteAdapter
+import com.codersanx.busview.main.BusNetwork
 import com.codersanx.busview.main.GpsControl
 import com.codersanx.busview.main.MapControl
-import com.codersanx.busview.main.BusNetwork
+import com.codersanx.busview.models.Route
+import com.codersanx.busview.network.GetUpdate
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.switchmaterial.SwitchMaterial
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
 import java.util.Locale
 
 
@@ -190,6 +198,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         dialogBuilder.setTitle(getString(R.string.settings))
 
         val currentSpeed = sharedPreferences.getInt("speed", 25)
+        val currentPercent = sharedPreferences.getInt("percent", 45)
 
         val valueTextView = TextView(this).apply {
             text = getString(R.string.current_speed, currentSpeed)
@@ -216,6 +225,38 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 valueTextView.text = getString(R.string.current_speed, progress + 10)
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
+
+
+        val valuePercent = TextView(this).apply {
+            text = getString(R.string.percent, currentPercent)
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(55, 36, 0, 16)
+            }
+        }
+
+        val seekBarPercent = SeekBar(this).apply {
+            max = 60
+            progress = currentPercent - 20
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(15, 16, 15, 16)
+            }
+        }
+
+        seekBarPercent.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                valuePercent.text = getString(R.string.percent, progress + 20)
             }
 
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
@@ -255,12 +296,51 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             }
         }
 
+        val version = TextView(this).apply {
+            val packageInfo = packageManager.getPackageInfo(packageName, 0)
+            text = getString(R.string.version, packageInfo.versionName)
+            textSize = 16f
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(55, 36, 0, 16)
+            }
+        }
+
+
+        val checkUpdate = Button(this).apply {
+            text = getString(R.string.check_updates)
+            background = getDrawable(R.drawable.borders_inverse)
+            setTextColor(ContextCompat.getColor(this@MainActivity, R.color.white))
+            isAllCaps = false
+            setOnClickListener {
+                val fetchData = GetUpdate(
+                    "https://codersanx.netlify.app/api/appsn",
+                    this@MainActivity,
+                    this@MainActivity
+                )
+                fetchData.getUpdateInformation()
+                Toast.makeText(this@MainActivity, "Checking for updates...", Toast.LENGTH_SHORT).show()
+            }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                setMargins(55, 36, 55, 16)
+            }
+        }
+
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             addView(valueTextView)
             addView(seekBar)
+            addView(valuePercent)
+            addView(seekBarPercent)
             addView(themeSwitch)
             addView(languageChooser)
+            addView(version)
+            addView(checkUpdate)
         }
 
         dialogBuilder.setView(layout)
@@ -268,6 +348,9 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             var wasChanged = false
             val value = seekBar.progress
             sharedPreferencesEditor.putInt("speed", value + 10).apply()
+
+            val percent = seekBarPercent.progress
+            sharedPreferencesEditor.putInt("percent", percent + 20).apply()
 
             if (sharedPreferences.getInt("language_index", 0) != languageChooser.selectedItemPosition) {
                 sharedPreferencesEditor.putInt("language_index", languageChooser.selectedItemPosition).apply()

@@ -47,7 +47,8 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
         val bottomSheet = dialog?.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
         bottomSheet?.let {
             val behavior = BottomSheetBehavior.from(it)
-            val maxHeight = (resources.displayMetrics.heightPixels * 0.45).toInt()
+            val mainAct = activity as MainActivity
+            val maxHeight = (resources.displayMetrics.heightPixels * mainAct.sharedPreferences.getInt("percent", 45)/100).toInt()
             it.layoutParams.height = maxHeight
             behavior.peekHeight = maxHeight
             it.requestLayout()
