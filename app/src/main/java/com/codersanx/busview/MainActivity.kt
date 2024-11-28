@@ -1,5 +1,6 @@
 package com.codersanx.busview
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -15,6 +16,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.Spinner
 import android.widget.TextView
@@ -23,6 +25,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import com.codersanx.busview.adapters.SelectRouteAdapter
 import com.codersanx.busview.main.BusNetwork
@@ -39,7 +42,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
@@ -62,15 +64,17 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     lateinit var map: MapView
     lateinit var route: AutoCompleteTextView
     lateinit var sharedPreferences: SharedPreferences
+    lateinit var centerOnStop: FloatingActionButton
     lateinit var mapControl: MapControl
 
     val busMarkers = mutableListOf<Marker>()
     val routeCoordinates = mutableListOf<GeoPoint>()
     val routes: MutableList<Route> = mutableListOf()
 
+    private var isPause = false
     var currentUserMarker: Marker? = null
 
-
+    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -90,6 +94,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         map = findViewById(R.id.map)
         route = findViewById(R.id.currentBus)
+        centerOnStop = findViewById(R.id.fab)
 
         Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID
         sensorManager = getSystemService(SENSOR_SERVICE) as SensorManager
@@ -105,6 +110,9 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             promptUserToEnableLocation()
         }
+
+        requestedOrientation = resources.configuration.orientation
+
 
         val fetchData = GetUpdate(
             "https://codersanx.netlify.app/api/appsn",
@@ -162,7 +170,14 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         route.setOnItemClickListener { _, _, _, _ ->
             initializeData()
             findViewById<TextView>(R.id.warning).visibility = View.GONE
+            centerOnStop.visibility = View.INVISIBLE
             gpsControl.getUserLocation(false)
+        }
+
+        centerOnStop.setOnClickListener {
+            if (mapControl.selectedStopMarker != null) {
+                mapControl.centerMapOnLocation(mapControl.selectedStopMarker!!.position)
+            }
         }
     }
 
@@ -186,7 +201,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     private fun startBusUpdates() {
         coroutineScope.launch {
-            while (isActive) {
+            while (!isPause) {
                 busNetwork.showBuses()
                 delay(5000)
             }
@@ -311,7 +326,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
         val checkUpdate = Button(this).apply {
             text = getString(R.string.check_updates)
-            background = getDrawable(R.drawable.borders_inverse)
+            background = AppCompatResources.getDrawable(this@MainActivity, R.drawable.borders_inverse)
             setTextColor(ContextCompat.getColor(this@MainActivity, R.color.white))
             isAllCaps = false
             setOnClickListener {
@@ -331,19 +346,21 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             }
         }
 
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(valueTextView)
-            addView(seekBar)
-            addView(valuePercent)
-            addView(seekBarPercent)
-            addView(themeSwitch)
-            addView(languageChooser)
-            addView(version)
-            addView(checkUpdate)
+        val lay = ScrollView(this).apply {
+            addView(LinearLayout(this@MainActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(valueTextView)
+                addView(seekBar)
+                addView(valuePercent)
+                addView(seekBarPercent)
+                addView(themeSwitch)
+                addView(languageChooser)
+                addView(version)
+                addView(checkUpdate)
+            })
         }
 
-        dialogBuilder.setView(layout)
+        dialogBuilder.setView(lay)
         dialogBuilder.setPositiveButton("OK") { dialog, _ ->
             var wasChanged = false
             val value = seekBar.progress
@@ -437,6 +454,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         )
         gpsControl.startLocationUpdates()
         map.onResume()
+        isPause = false
     }
 
     override fun onPause() {
@@ -444,6 +462,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         sensorManager.unregisterListener(gpsControl.sensorEventListener)
         gpsControl.stopLocationUpdates()
         map.onPause()
+        isPause = true
     }
 
     override fun onDestroy() {

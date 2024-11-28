@@ -21,6 +21,7 @@
     <string name="dark_mode">Dark mode</string>
     <string name="star">star</string>
     <string name="version">Version: %1$s</string>
-    <string name="percent">%1$d%%</string>
+    <string name="percent">Restriction: %1$d%%</string>
     <string name="check_updates">Check updates</string>
+    <string name="time_for_a_bus">Time for a bus</string>
 </resources>

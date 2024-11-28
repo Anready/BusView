@@ -1,6 +1,7 @@
 package com.codersanx.busview.main
 
 import android.net.Uri
+import android.view.View
 import androidx.core.content.ContextCompat
 import com.codersanx.busview.MainActivity
 import com.codersanx.busview.R
@@ -25,6 +26,8 @@ class MapControl(private val map: MapView, private val activity: MainActivity) {
         selectedStopMarker = marker
         marker.icon = ContextCompat.getDrawable(activity, R.drawable.bus_stop_selected)
         calculateDistancesToStop()
+        bottomSheetFragment.show(activity.supportFragmentManager, bottomSheetFragment.tag)
+        activity.centerOnStop.visibility = View.VISIBLE
         map.invalidate()
     }
 
@@ -57,10 +60,6 @@ class MapControl(private val map: MapView, private val activity: MainActivity) {
             val url =
                 "geo:${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}?q=${selectedStopMarker!!.position.latitude},${selectedStopMarker!!.position.longitude}(${selectedStopMarker!!.title})"
             bottomSheetFragment.updateView(sortedInfo, selectedStopMarker!!.title, Uri.parse(url))
-
-            if (!bottomSheetFragment.isAdded && !bottomSheetFragment.isVisible) {
-                bottomSheetFragment.show(activity.supportFragmentManager, bottomSheetFragment.tag)
-            }
         }
     }
 

@@ -21,7 +21,8 @@
     <string name="you_are_here">Вы здесь</string>
     <string name="dark_mode">Темная тема</string>
     <string name="star">Заметка</string>
-    <string name="version">Version: %1$s</string>
-    <string name="percent">%1$d%%</string>
-    <string name="check_updates">Check updates</string>
+    <string name="version">Версия: %1$s</string>
+    <string name="percent">Ограничение: %1$d%%</string>
+    <string name="check_updates">Проверить обновления</string>
+    <string name="time_for_a_bus">Время до автобуса</string>
 </resources>

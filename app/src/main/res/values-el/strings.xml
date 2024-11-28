@@ -20,8 +20,9 @@
     <string name="no_internet">Δεν υπάρχει σύνδεση στο διαδίκτυο</string>
     <string name="you_are_here">Είστε εδώ</string>
     <string name="dark_mode">Σκοτεινή λειτουργία</string>
-    <string name="star">star</string>
-    <string name="version">Version: %1$s</string>
-    <string name="percent">%1$d%%</string>
-    <string name="check_updates">Check updates</string>
+    <string name="star">σημείωση</string>
+    <string name="version">Έκδοση: %1$s</string>
+    <string name="percent">Περιορισμός: %1$d%%</string>
+    <string name="check_updates">Έλεγχος ενημερώσεων</string>
+    <string name="time_for_a_bus">Ώρα για το λεωφορείο</string>
 </resources>

@@ -5,7 +5,6 @@ import android.net.Uri
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import android.widget.TextView
 import android.os.Bundle
-import androidx.core.content.ContextCompat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,7 +13,6 @@ import android.widget.ListView
 import com.codersanx.busview.models.Bus
 import com.codersanx.busview.adapters.BusAdapter
 import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 class ShowTimeBuses : BottomSheetDialogFragment() {
 
@@ -24,7 +22,6 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
     private lateinit var listView: ListView
     private lateinit var stopNameTextView: TextView
     private lateinit var openStopOnMap: ImageView
-    private lateinit var centerOnStop: FloatingActionButton
     private var adapter: BusAdapter? = null  // Initialize adapter as nullable
 
     override fun onCreateView(
@@ -35,7 +32,6 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
         
         stopNameTextView = view.findViewById(R.id.stop_name_text_view)
         openStopOnMap = view.findViewById(R.id.imageView)
-        centerOnStop = view.findViewById(R.id.fab)
         // Initialize ListView
         listView = view.findViewById(R.id.my_list_view)
         return view
@@ -48,7 +44,7 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
         bottomSheet?.let {
             val behavior = BottomSheetBehavior.from(it)
             val mainAct = activity as MainActivity
-            val maxHeight = (resources.displayMetrics.heightPixels * mainAct.sharedPreferences.getInt("percent", 45)/100).toInt()
+            val maxHeight = (resources.displayMetrics.heightPixels * mainAct.sharedPreferences.getInt("percent", 45)/100)
             it.layoutParams.height = maxHeight
             behavior.peekHeight = maxHeight
             it.requestLayout()
@@ -63,13 +59,6 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
             val mapIntent = Intent(Intent.ACTION_VIEW, url)
             mapIntent.setPackage("com.google.android.apps.maps")
             startActivity(mapIntent)
-        }
-
-        centerOnStop.setOnClickListener {
-            val act = activity as MainActivity
-            if (act.mapControl.selectedStopMarker != null) {
-                act.mapControl.centerMapOnLocation(act.mapControl.selectedStopMarker!!.position)
-            }
         }
     }
 
@@ -91,15 +80,5 @@ class ShowTimeBuses : BottomSheetDialogFragment() {
         }
 
         stopNameTextView.text = stopName
-    }
-
-    override fun onDismiss(dialog: android.content.DialogInterface) {
-        super.onDismiss(dialog)
-        val mainAct = activity as MainActivity
-        mainAct.mapControl.selectedStopMarker?.icon =
-        ContextCompat.getDrawable(requireContext(), R.drawable.bus_stop)
-    
-        // Clear the selected marker
-        mainAct.mapControl.selectedStopMarker = null
     }
 }
