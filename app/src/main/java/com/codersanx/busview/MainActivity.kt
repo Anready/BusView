@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.location.LocationManager
@@ -42,6 +43,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.osmdroid.config.Configuration
 import org.osmdroid.library.BuildConfig
@@ -71,7 +73,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     val routeCoordinates = mutableListOf<GeoPoint>()
     val routes: MutableList<Route> = mutableListOf()
 
-    private var isPause = false
     var currentUserMarker: Marker? = null
 
     @SuppressLint("SourceLockedOrientationActivity")
@@ -201,7 +202,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     private fun startBusUpdates() {
         coroutineScope.launch {
-            while (!isPause) {
+            while (isActive) {
                 busNetwork.showBuses()
                 delay(5000)
             }
@@ -289,6 +290,8 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
                 setMargins(55, 16, 55, 16)
             }
         }
+
+        themeSwitch.trackTintList = ColorStateList.valueOf(ContextCompat.getColor(this, R.color.secondary))
 
         val languages = arrayOf("English", "Русский", "Українська", "Ελληνικά")
         val codes = arrayOf("en", "ru", "uk", "el")
@@ -454,7 +457,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         )
         gpsControl.startLocationUpdates()
         map.onResume()
-        isPause = false
     }
 
     override fun onPause() {
@@ -462,7 +464,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         sensorManager.unregisterListener(gpsControl.sensorEventListener)
         gpsControl.stopLocationUpdates()
         map.onPause()
-        isPause = true
     }
 
     override fun onDestroy() {
