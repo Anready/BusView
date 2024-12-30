@@ -147,7 +147,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         fetchData.getUpdateInformation()
 
         coroutineScope.launch {
-            emulated = Emulation(this)
+            emulated = Emulation(this@MainActivity)
             val allRoutes = busNetwork.getRoutes(this@MainActivity)
             val names: MutableList<String> = mutableListOf()
 
