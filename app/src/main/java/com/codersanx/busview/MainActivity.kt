@@ -138,8 +138,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         }
 
         requestedOrientation = resources.configuration.orientation
-        emulated = Emulation(this)
-
+        
         val fetchData = GetUpdate(
             "https://codersanx.netlify.app/api/appsn",
             this,
@@ -148,6 +147,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         fetchData.getUpdateInformation()
 
         coroutineScope.launch {
+            emulated = Emulation(this)
             val allRoutes = busNetwork.getRoutes(this@MainActivity)
             val names: MutableList<String> = mutableListOf()
 
