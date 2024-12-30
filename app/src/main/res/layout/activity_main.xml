@@ -97,4 +97,38 @@
         app:layout_constraintStart_toStartOf="parent"
         app:srcCompat="@drawable/bus_stop_selected" />
 
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <RadioButton
+            android:id="@+id/btn_realtime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/segmented"
+            android:button="@null"
+            android:padding="15dp"
+            android:checked="true"
+            android:text="RealTime"
+            android:layout_marginEnd="-5dp"
+            android:elevation="4dp"
+            android:textColor="@color/selector_text_color" />
+
+        <RadioButton
+            android:id="@+id/btn_emulated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/segmented"
+            android:button="@null"
+            android:padding="15dp"
+            android:text="Emulated"
+            android:layout_marginStart="-5dp"
+            android:textColor="@color/selector_text_color" />
+    </RadioGroup>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

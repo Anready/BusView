@@ -53,15 +53,34 @@ class SelectRouteAdapter(
 
     fun sortByStarred() {
         if (sortedNames.isEmpty()) return
+
         sortedNames.sortWith { name1, name2 ->
             val star1 = sharedPreferences.getBoolean("route$name1", false)
             val star2 = sharedPreferences.getBoolean("route$name2", false)
+
             when {
                 star1 && !star2 -> -1
                 !star1 && star2 -> 1
-                else -> name1.compareTo(name2)
+                else -> {
+                    val (number1, suffix1) = extractNumberAndSuffix(name1)
+                    val (number2, suffix2) = extractNumberAndSuffix(name2)
+
+                    when {
+                        number1 != number2 -> number1 - number2
+                        else -> suffix1.compareTo(suffix2)
+                    }
+                }
             }
         }
+    }
+
+    fun extractNumberAndSuffix(route: String): Pair<Int, String> {
+        val split = route.split(":")[0].trim()
+        val numberPart = split.takeWhile { it.isDigit() }
+        val suffixPart = split.drop(numberPart.length)
+
+        val number = numberPart.toIntOrNull() ?: Int.MAX_VALUE
+        return Pair(number, suffixPart)
     }
 
     override fun getFilter(): Filter {

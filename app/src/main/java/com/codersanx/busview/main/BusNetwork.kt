@@ -8,6 +8,8 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import com.codersanx.busview.MainActivity
 import com.codersanx.busview.R
+import com.codersanx.busview.buses.Emulation
+import com.codersanx.busview.buses.RealTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -111,26 +113,27 @@ class BusNetwork(private val map: MapView, private val activity: MainActivity) {
         }
     }
 
-    suspend fun showBuses() = withContext(Dispatchers.IO) {
+    suspend fun showBuses(isRealTime: Boolean, emulated: Emulation?) = withContext(Dispatchers.IO) {
         try {
             if (activity.route.text.toString() == "") {
                 return@withContext
             }
 
-            val request = Request.Builder()
-                .url("https://cyprusbus.info/api/buses")
-                .build()
+            val realTime = RealTime(activity)
 
-            val response = client.newCall(request).execute()
-            val busesJson = response.body?.string()?.let {
-                JSONObject(it).getJSONObject("Buses")
+            val response = if(isRealTime) {
+                realTime.buses
+            } else {
+                emulated!!.buses
             }
+
+            val busesJson = JSONObject(response).getJSONObject("Buses")
 
             withContext(Dispatchers.Main) {
                 activity.busMarkers.forEach { map.overlays.remove(it) }
                 activity.busMarkers.clear()
 
-                busesJson?.keys()?.forEach { key ->
+                busesJson.keys().forEach { key ->
                     val bus = busesJson.getJSONObject(key)
                     if (bus.getString("RouteLongName") == getLongName(activity.route.text.toString())) {
                         val bearing = -(bus.getDouble("Bearing").toFloat() - 90F)
@@ -169,6 +172,8 @@ class BusNetwork(private val map: MapView, private val activity: MainActivity) {
 
                 if (activity.busMarkers.isEmpty()) {
                     activity.findViewById<TextView>(R.id.warning).visibility = View.VISIBLE
+                } else {
+                    activity.findViewById<TextView>(R.id.warning).visibility = View.GONE
                 }
 
                 activity.mapControl.calculateDistancesToStop()

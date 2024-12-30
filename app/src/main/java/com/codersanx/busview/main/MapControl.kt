@@ -43,7 +43,11 @@ class MapControl(private val map: MapView, private val activity: MainActivity) {
                     return@forEach
                 }
 
-                val time = ((routeDistance / activity.sharedPreferences.getInt("speed", 25)) * 60).roundToInt()
+                var time = ((routeDistance / activity.sharedPreferences.getInt("speed", 25)) * 60).roundToInt()
+                if (activity.btnEmulated.isChecked) {
+                    time = ((routeDistance / 25) * 60).roundToInt()
+                }
+
                 infoBuilder.add(
                     Bus(
                         "${

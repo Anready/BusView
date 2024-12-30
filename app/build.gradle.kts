@@ -39,7 +39,7 @@ android {
 }
 
 dependencies {
-
+    implementation("com.google.transit:gtfs-realtime-bindings:0.0.4")
     implementation(libs.osmdroid.android)
     implementation(libs.okhttp)
     implementation(libs.moshi.kotlin)

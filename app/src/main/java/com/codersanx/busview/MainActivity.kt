@@ -1,7 +1,5 @@
 package com.codersanx.busview
 
-import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
@@ -17,6 +15,7 @@ import android.widget.ArrayAdapter
 import android.widget.AutoCompleteTextView
 import android.widget.Button
 import android.widget.LinearLayout
+import android.widget.RadioButton
 import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.Spinner
@@ -29,6 +28,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import com.codersanx.busview.adapters.SelectRouteAdapter
+import com.codersanx.busview.buses.Emulation
 import com.codersanx.busview.main.BusNetwork
 import com.codersanx.busview.main.GpsControl
 import com.codersanx.busview.main.MapControl
@@ -60,6 +60,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var gpsControl: GpsControl
     private lateinit var busNetwork: BusNetwork
+    private lateinit var emulated: Emulation
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
@@ -68,6 +69,8 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     lateinit var sharedPreferences: SharedPreferences
     lateinit var centerOnStop: FloatingActionButton
     lateinit var mapControl: MapControl
+    lateinit var btnRealtime: RadioButton
+    lateinit var btnEmulated: RadioButton
 
     val busMarkers = mutableListOf<Marker>()
     val routeCoordinates = mutableListOf<GeoPoint>()
@@ -75,7 +78,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     var currentUserMarker: Marker? = null
 
-    @SuppressLint("SourceLockedOrientationActivity")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -107,13 +109,36 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         gpsControl = GpsControl(fusedLocationClient, this)
         gpsControl.setupLocationUpdates()
 
-        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
+        val locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
         if (!locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
             promptUserToEnableLocation()
         }
 
-        requestedOrientation = resources.configuration.orientation
+        btnRealtime = findViewById(R.id.btn_realtime)
+        btnEmulated = findViewById(R.id.btn_emulated)
 
+        btnRealtime.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                btnRealtime.elevation = 4f
+                btnEmulated.elevation = 2f
+            } else {
+                btnRealtime.elevation = 2f
+                btnEmulated.elevation = 4f
+            }
+        }
+
+        btnEmulated.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked) {
+                btnEmulated.elevation = 4f
+                btnRealtime.elevation = 2f
+            } else {
+                btnEmulated.elevation = 2f
+                btnRealtime.elevation = 4f
+            }
+        }
+
+        requestedOrientation = resources.configuration.orientation
+        emulated = Emulation(this)
 
         val fetchData = GetUpdate(
             "https://codersanx.netlify.app/api/appsn",
@@ -139,10 +164,10 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
             route.isFocusableInTouchMode = false
             route.setAdapter(adapter)
 
-            val maxVisibleItems = 5
-            val itemHeight = resources.getDimensionPixelSize(android.R.dimen.app_icon_size)
-            route.dropDownHeight = maxVisibleItems * itemHeight
+            val screenHeight = resources.displayMetrics.heightPixels
+            val dropdownHeight = (screenHeight * 0.40).toInt()
 
+            route.dropDownHeight = dropdownHeight
             route.hint = getString(R.string.choose_route)
 
             setupMap()
@@ -203,7 +228,12 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private fun startBusUpdates() {
         coroutineScope.launch {
             while (isActive) {
-                busNetwork.showBuses()
+                if (btnRealtime.isChecked) {
+                    busNetwork.showBuses(true, null)
+                } else {
+                    busNetwork.showBuses(false, emulated)
+                }
+
                 delay(5000)
             }
         }
