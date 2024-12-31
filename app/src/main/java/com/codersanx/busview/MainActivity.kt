@@ -60,7 +60,6 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var gpsControl: GpsControl
     private lateinit var busNetwork: BusNetwork
-    private lateinit var emulated: Emulation
 
     private val coroutineScope = CoroutineScope(Dispatchers.Main + Job())
 
@@ -147,7 +146,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
         fetchData.getUpdateInformation()
 
         coroutineScope.launch {
-            emulated = Emulation(this@MainActivity)
+            
             val allRoutes = busNetwork.getRoutes(this@MainActivity)
             val names: MutableList<String> = mutableListOf()
 
@@ -227,6 +226,7 @@ open class MainActivity : AppCompatActivity(), GetUpdate.UpdateCallback {
 
     private fun startBusUpdates() {
         coroutineScope.launch {
+            val emulated = Emulation(this@MainActivity)
             while (isActive) {
                 if (btnRealtime.isChecked) {
                     busNetwork.showBuses(true, null)
