@@ -31,7 +31,7 @@ public class Emulation {
 
         File file = new File(context.getFilesDir() + path + "calendar_dates.txt");
         if (!file.exists()) {
-            update(false);
+            return;
         }
 
         getTodayDateID();
@@ -43,6 +43,11 @@ public class Emulation {
     }
 
     public String getBuses() {
+        File file = new File(context.getFilesDir() + path + "calendar_dates.txt");
+        if (!file.exists()) {
+            update(true);
+        }
+
         boolean updateNeeded = true;
         for (String date : dayId.values()) {
             if (isAfter(date + "_23:59:59")) {
