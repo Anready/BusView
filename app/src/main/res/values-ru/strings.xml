@@ -1,28 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bus View</string>
-    <string name="no_bus_available_on_this_route">На этом маршруте нет автобусов</string>
-    <string name="center_map">Центрировать карту</string>
-    <string name="settings">Настройки</string>
-    <string name="speed">Выберите значение скорости:</string>
-    <string name="current_speed">Скорость: %1$d</string>
-    <string name="saved">Сохранено</string>
-    <string name="cancel">Отмена</string>
-    <string name="enable_location">GPS выключен. Пожалуйста, включите его</string>
-    <string name="enable">Включить</string>
-    <string name="give_permission">Для отображения вашего местоположения на карте требуется разрешение на доступ к местоположению</string>
     <string name="update_available">Доступно обновление</string>
     <string name="whats_new">Что нового?\n%1$s</string>
     <string name="update">Обновить</string>
     <string name="later">Позже</string>
-    <string name="choose_route">Выберите маршрут</string>
-    <string name="label_bus">Автобус %1$s\nСкорость: %2$d км/ч</string>
-    <string name="no_internet">Нет интернета</string>
-    <string name="you_are_here">Вы здесь</string>
-    <string name="dark_mode">Темная тема</string>
-    <string name="star">Заметка</string>
-    <string name="version">Версия: %1$s</string>
-    <string name="percent">Ограничение: %1$d%%</string>
-    <string name="check_updates">Проверить обновления</string>
-    <string name="time_for_a_bus">Время до автобуса</string>
 </resources>

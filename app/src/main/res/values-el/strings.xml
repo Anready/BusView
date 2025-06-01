@@ -1,28 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Bus View</string>
-    <string name="no_bus_available_on_this_route">Δεν υπάρχει λεωφορείο σε αυτήν τη διαδρομή</string>
-    <string name="center_map">Κεντράρισμα χάρτη</string>
-    <string name="settings">Ρυθμίσεις</string>
-    <string name="speed">Επιλέξτε τιμή ταχύτητας:</string>
-    <string name="current_speed">Ταχύτητα: %1$d</string>
-    <string name="saved">Αποθηκεύτηκε</string>
-    <string name="cancel">Ακύρωση</string>
-    <string name="enable_location">Το GPS είναι απενεργοποιημένο. Παρακαλώ ενεργοποιήστε το</string>
-    <string name="enable">Ενεργοποίηση</string>
-    <string name="give_permission">Απαιτείται άδεια τοποθεσίας για να εμφανιστεί η τοποθεσία σας στον χάρτη</string>
     <string name="update_available">Διαθέσιμη ενημέρωση</string>
     <string name="whats_new">Τι νέο υπάρχει;\n%1$s</string>
     <string name="update">Ενημέρωση</string>
     <string name="later">Αργότερα</string>
-    <string name="choose_route">Επιλέξτε διαδρομή</string>
-    <string name="label_bus">Λεωφορείο %1$s\nΤαχύτητα: %2$d χλμ/ώρα</string>
-    <string name="no_internet">Δεν υπάρχει σύνδεση στο διαδίκτυο</string>
-    <string name="you_are_here">Είστε εδώ</string>
-    <string name="dark_mode">Σκοτεινή λειτουργία</string>
-    <string name="star">σημείωση</string>
-    <string name="version">Έκδοση: %1$s</string>
-    <string name="percent">Περιορισμός: %1$d%%</string>
-    <string name="check_updates">Έλεγχος ενημερώσεων</string>
-    <string name="time_for_a_bus">Ώρα για το λεωφορείο</string>
 </resources>

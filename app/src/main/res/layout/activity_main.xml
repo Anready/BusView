@@ -5,130 +5,17 @@
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <org.osmdroid.views.MapView
-        android:id="@+id/map"
+    <WebView
+        android:id="@+id/webview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:layout_editor_absoluteX="72dp"
-        tools:layout_editor_absoluteY="0dp">
-
-    </org.osmdroid.views.MapView>
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/currentBus_holder"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="35dp"
-        android:paddingStart="5dp"
-        android:paddingEnd="5dp"
-
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
-
-        <AutoCompleteTextView
-            android:id="@+id/currentBus"
-            android:layout_width="match_parent"
-            android:layout_height="41dp"
-            android:background="@drawable/borders"
-            android:inputType="none"
-            android:padding="1dp"
-            tools:ignore="LabelFor" />
-
-    </com.google.android.material.textfield.TextInputLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/floatingActionButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="48dp"
-        android:clickable="true"
-        app:backgroundTint="@color/yellow"
-        android:contentDescription="@string/center_map"
-        android:focusable="true"
+        app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/gps" />
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/floatingSettings"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="8dp"
-        android:layout_marginBottom="16dp"
-        android:clickable="true"
-        app:backgroundTint="@color/yellow"
-        android:contentDescription="@string/center_map"
-        android:focusable="true"
-        app:layout_constraintBottom_toTopOf="@id/floatingActionButton"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:srcCompat="@drawable/settings" />
-
-    <TextView
-        android:id="@+id/warning"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:padding="10dp"
-        android:text="@string/no_bus_available_on_this_route"
-        android:textColor="#FFF"
-        android:visibility="gone"
-        android:background="@drawable/borders"
-        android:backgroundTint="#BC1818"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/currentBus_holder" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="end|bottom"
-        android:layout_margin="10dp"
-        android:visibility="invisible"
-        android:layout_marginStart="8dp"
-        android:layout_marginBottom="48dp"
-        android:contentDescription="Center on a stop"
-        app:layout_constraintBottom_toBottomOf="@id/floatingActionButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:srcCompat="@drawable/bus_stop_selected" />
-
-    <RadioGroup
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="24dp"
-        android:orientation="horizontal"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-
-        <RadioButton
-            android:id="@+id/btn_realtime"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/segmented"
-            android:button="@null"
-            android:padding="15dp"
-            android:checked="true"
-            android:text="RealTime"
-            android:layout_marginEnd="-5dp"
-            android:elevation="4dp"
-            android:textColor="@color/selector_text_color" />
-
-        <RadioButton
-            android:id="@+id/btn_emulated"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/segmented"
-            android:button="@null"
-            android:padding="15dp"
-            android:text="Emulated"
-            android:layout_marginStart="-5dp"
-            android:textColor="@color/selector_text_color" />
-    </RadioGroup>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

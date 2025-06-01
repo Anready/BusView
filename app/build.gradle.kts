@@ -9,10 +9,10 @@ android {
 
     defaultConfig {
         applicationId = "com.codersanx.busview"
-        minSdk = 21
+        minSdk = 23
         targetSdk = 35
-        versionCode = 8
-        versionName = "2.7.4"
+        versionCode = 9
+        versionName = "2.8.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -39,9 +39,6 @@ android {
 }
 
 dependencies {
-    implementation("com.google.transit:gtfs-realtime-bindings:0.0.4")
-    implementation(libs.osmdroid.android)
-    implementation(libs.okhttp)
     implementation(libs.moshi.kotlin)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
