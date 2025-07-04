@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -11,15 +10,17 @@ android {
         applicationId = "com.codersanx.busview"
         minSdk = 23
         targetSdk = 35
-        versionCode = 9
-        versionName = "2.8.4"
+        versionCode = 10
+        versionName = "2.8.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -33,20 +34,10 @@ android {
     tasks.withType<JavaCompile> {
         options.compilerArgs.add("-Xlint:deprecation")
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
 }
 
 dependencies {
-    implementation(libs.moshi.kotlin)
-    implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
-    implementation(libs.material)
     implementation(libs.androidx.activity)
-    implementation(libs.androidx.constraintlayout)
-    implementation(libs.play.services.location)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
+    implementation(libs.material)
 }
