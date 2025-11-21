@@ -60,6 +60,10 @@ public class MainActivity extends AppCompatActivity implements GetUpdate.UpdateC
         webView.getSettings().setBuiltInZoomControls(true);
         webView.getSettings().setDisplayZoomControls(false);
 
+        String ua = webView.getSettings().getUserAgentString();
+        ua = ua.replaceAll("Version/\\d+\\.\\d+", "");
+        webView.getSettings().setUserAgentString(ua);
+
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -137,7 +141,6 @@ public class MainActivity extends AppCompatActivity implements GetUpdate.UpdateC
 
         runOnUiThread(() -> {
             AlertDialog dialog = builder.create();
-            Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawableResource(R.drawable.borders);
             dialog.show();
         });
     }
